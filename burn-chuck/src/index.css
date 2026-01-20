@@ -1,0 +1,43 @@
+@font-face {
+    font-family: 'GmarketSansMedium';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'GmarketSansBold';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'GmarketSansMedium', sans-serif;
+  
+  /* 데스크탑 배경색 (원하는 색으로 변경 가능) */
+  background-color: #f0f2f5; 
+  
+  /* 내용을 중앙으로 정렬 */
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* 실제 앱 화면이 될 컨테이너 클래스 */
+.app-container {
+  width: 100%;
+  
+  /* 최신 아이폰 프로 맥스 너비 등을 고려해 430px~480px 정도가 적당합니다 */
+  max-width: 430px;
+  
+  min-height: 100vh;
+  background-color: #ffffff; /* 앱 배경은 흰색 */
+  
+  /* 데스크탑에서 입체감을 주기 위한 그림자 */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05); 
+  
+  position: relative; /* 자식 요소 위치 잡기 편하게 설정 */
+}
