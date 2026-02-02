@@ -13,6 +13,13 @@
   font-style: normal;
 }
 
+@font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-semibold.woff2') format('woff2');
+    font-weight: 900;
+    font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,7 +40,8 @@ html, body, #root {
   padding: 0;
   overflow: hidden; /* 전체 페이지 스크롤 방지 */
   background-color: #f0f2f5; /* 데스크탑 배경색 */
-  font-family: 'GmarketSansMedium', sans-serif;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
 }
 
 /* 2. 앱 컨테이너: 모든 페이지가 이 프레임을 공유합니다 */

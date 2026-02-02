@@ -1,9 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Category from '../components/home/Category';
+import MyLocation from '../components/home/MyLocation';
+import MeetingsList from '../components/home/MeetingsList';
 
 export default function HomePage() {
+	const [selectedCategory, setSelectedCategory] = useState(null);
+
 	return (
 		<div style={{ minHeight: 'calc(100vh - 180px)' }}>
-			{/* 빈 페이지: Header/Footer는 Layout에서 고정으로 제공됩니다. */}
+			{/* Category (height 56px) */}
+			<Category selected={selectedCategory} onSelect={setSelectedCategory} />
+
+			{/* MyLocation (height 50px) */}
+			<MyLocation />
+
+			{/* Meetings list */}
+			<div className="mt-3">
+				<MeetingsList category={selectedCategory} />
+			</div>
 		</div>
 	);
 }

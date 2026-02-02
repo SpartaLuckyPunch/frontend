@@ -163,19 +163,19 @@ export default function SignupPage() {
           </label>
 
           <div className="flex gap-2">
-            <select value={province} onChange={(e) => setProvince(e.target.value)} className="flex-1 border-2 border-black rounded-xl p-3">
+            <select value={province} onChange={(e) => setProvince(e.target.value)} className="flex-1 text-xs border-2 border-black rounded-xl p-3">
               {provinceList.length === 0 && <option>불러오는 중...</option>}
               {provinceList.map((p) => (
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
-            <select value={city} onChange={(e) => setCity(e.target.value)} className="flex-1 border-2 border-black rounded-xl p-3">
+            <select value={city} onChange={(e) => setCity(e.target.value)} className="flex-1 text-xs border-2 border-black rounded-xl p-3">
               {cityList.length === 0 && <option>선택 없음</option>}
               {cityList.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            <select value={district} onChange={(e) => setDistrict(e.target.value)} className="flex-1 border-2 border-black rounded-xl p-3">
+            <select value={district} onChange={(e) => setDistrict(e.target.value)} className="flex-1 text-xs border-2 border-black rounded-xl p-3">
               {districtList.length === 0 && <option>선택 없음</option>}
               {districtList.map((d) => (
                 <option key={d} value={d}>{d}</option>
