@@ -34,7 +34,7 @@ export default function LoginPage() {
 
         {/* back arrow */}
         <div className="h-12 flex items-center">
-          <button onClick={() => navigate(-1)} className="bg-transparent border-0 p-0 cursor-pointer" aria-label="뒤로">
+          <button onClick={() => navigate('/')} className="bg-transparent border-0 p-0 cursor-pointer" aria-label="뒤로">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M15 18L9 12L15 6" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
