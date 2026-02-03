@@ -8,16 +8,15 @@ export async function login(email, password) {
 
 export function useAuth() {
   const setToken = useAuthStore((s) => s.setToken);
-  const setUser = useAuthStore((s) => s.setUser);
+  // const setUser = useAuthStore((s) => s.setUser); // 이건 필요 없음
 
   const doLogin = async (email, password) => {
     const data = await login(email, password);
+    
     if (data && data.success) {
       const token = data.data?.token;
+      // 토큰만 던져주면 Store가 알아서 해석하고 id, user 정보 다 채워넣음
       if (token) setToken(token);
-      // if API returns user info, store it; otherwise store email as minimal info
-      const user = data.data?.user ?? { email };
-      setUser(user);
     }
     return data;
   };

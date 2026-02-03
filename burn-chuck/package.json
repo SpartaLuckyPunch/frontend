@@ -11,10 +11,13 @@
     "axios": "^1.13.4",
     "eslint-config-react-app": "^7.0.1",
     "lucide-react": "^0.562.0",
+    "net": "^1.0.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-router-dom": "^7.12.0",
     "react-scripts": "^0.0.0",
+    "sockjs-client": "^1.6.1",
+    "stompjs": "^2.3.3",
     "web-vitals": "^2.1.4",
     "zustand": "^5.0.10"
   },

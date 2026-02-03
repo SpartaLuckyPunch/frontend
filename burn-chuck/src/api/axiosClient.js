@@ -16,3 +16,9 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export default apiClient;
+
+// 채팅방 이름 변경 API
+export const updateChatRoomName = async (roomId, newName) => {
+  const response = await apiClient.patch(`/chat/${roomId}/name`, { name: newName });
+  return response.data;
+};

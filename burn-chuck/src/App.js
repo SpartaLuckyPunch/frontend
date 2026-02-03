@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import SearchPage from './pages/SearchPage';
 import SearchInputPage from './pages/SearchInputPage';
+import ChatPage from './pages/ChatPage';
+import ChatRoomPage from './pages/ChatRoomPage';
 
 export default function App() {
   return (
@@ -19,7 +21,8 @@ export default function App() {
             <Route path="/my-meetings" element={<TempPage title="나의 모임" />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/search/input" element={<SearchInputPage />} />
-            <Route path="/chat" element={<TempPage title="채팅" />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat/rooms/:roomId" element={<ChatRoomPage />} />
             <Route path="/profile" element={<TempPage title="프로필" />} />
           </Route>
 
