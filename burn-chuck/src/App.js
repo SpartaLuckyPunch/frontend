@@ -4,6 +4,8 @@ import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import SearchPage from './pages/SearchPage';
+import SearchInputPage from './pages/SearchInputPage';
 
 export default function App() {
   return (
@@ -15,7 +17,8 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/my-meetings" element={<TempPage title="나의 모임" />} />
-            <Route path="/search" element={<TempPage title="검색" />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/search/input" element={<SearchInputPage />} />
             <Route path="/chat" element={<TempPage title="채팅" />} />
             <Route path="/profile" element={<TempPage title="프로필" />} />
           </Route>
