@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../features/auth/store/authStore';
+import { useUserStore } from '../../features/auth/store/useUserStore';
 
 // Props:
 // - open: boolean (controls enter/exit)
@@ -29,6 +30,8 @@ export default function SettingsDrawer({ open, onRequestClose, onAfterClose }) {
 
   const handleLogout = () => {
     try {
+      useAuthStore.getState().logout();       // 토큰 삭제
+      useUserStore.getState().clearUserStore(); // 주소 정보 삭제
       logout();
     } finally {
       onRequestClose && onRequestClose();

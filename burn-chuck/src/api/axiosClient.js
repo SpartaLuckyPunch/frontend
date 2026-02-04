@@ -15,6 +15,31 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// 응답 인터셉터: 401 발생 시 토큰 재발급 시도하고 원래 요청 재시도
+apiClient.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const originalRequest = error.config;
+    if (!originalRequest) return Promise.reject(error);
+
+    // 이미 재시도 한 요청인지 확인
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const reissued = await useAuthStore.getState().reissue();
+        if (reissued) {
+          // 새로운 토큰이 적용되었으므로 원래 요청 재시도
+          return apiClient(originalRequest);
+        }
+      } catch (e) {
+        console.error('reissue failed in interceptor', e);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export default apiClient;
 
 // 채팅방 이름 변경 API

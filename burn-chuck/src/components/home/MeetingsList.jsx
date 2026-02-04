@@ -66,7 +66,19 @@ export default function MeetingsList({ category = null, onItemClick = () => {} }
           const maxAttendees = m.maxAttendees;
           const currentAttendees = m.currentAttendees;
           return (
-            <div key={id} className="h-32 bg-white rounded-md flex items-center p-3 shadow-sm" onClick={() => onItemClick(m)}>
+            <div
+              key={id}
+              className="h-32 bg-white rounded-md flex items-center p-3 shadow-sm cursor-pointer hover:shadow-md"
+              role="button"
+              tabIndex={0}
+              onClick={() => onItemClick(m)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onItemClick(m);
+                }
+              }}
+            >
               <img src={sampleImg} alt={title} className="w-24 h-full object-cover mr-3 rounded" />
               <div className="flex-1">
                 <div className="font-medium text-gray-800 mb-4">{title}</div>

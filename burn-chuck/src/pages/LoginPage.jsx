@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
+import useUserStore from '../features/auth/store/useUserStore';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const fetchUserAddress = useUserStore((state) => state.fetchUserAddress);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,6 +19,7 @@ export default function LoginPage() {
     try {
       const res = await doLogin(email, password);
       if (res?.success) {
+        await fetchUserAddress();
         navigate('/');
       } else {
         setError(res?.message || '로그인에 실패했습니다');

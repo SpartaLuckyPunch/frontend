@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import apiClient from '../api/axiosClient';
 import { Search as SearchIcon } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import useUserStore from '../features/auth/store/useUserStore';
 
 export default function SearchPage() {
   const mapRef = useRef(null);
@@ -9,15 +10,21 @@ export default function SearchPage() {
   const searchMarkersRef = useRef([]);
   const markersRef = useRef([]);
   const boundsListenerRef = useRef(null);
+  
+  // ✏️ 디바운싱을 위한 타이머 Ref 추가
+  const timerRef = useRef(null);
+
   const navigate = useNavigate();
   const location = useLocation();
 
+  const userAddress= useUserStore(state => state.userAddress);
+
   // 현재 내 위치
-  const myLat = 37.5450159;
-  const myLng = 127.1368066;
+  const myLat = userAddress?.latitude;
+  const myLng = userAddress?.longitude;
 
   useEffect(() => {
-    // 1. 이미 지도가 생성되어 있다면 초기화 로직을 건너뜀 (불필요한 리셋 방지)
+    // 1. 이미 지도가 생성되어 있다면 초기화 로직을 건너뜀
     if (mapRef.current) return;
 
     const waitForKakao = (cb) => {
@@ -41,63 +48,82 @@ export default function SearchPage() {
       const map = new kakao.maps.Map(container, options);
       mapRef.current = map;
 
-      // 내 위치 마커 표시
+      // 내 위치 마커 표시 (구분을 위해 이미지를 다르게 하거나 색상을 다르게 할 수 있음)
       new kakao.maps.Marker({ position: center, map });
 
-      const onBoundsChanged = async () => {
-        try {
-          if (!mapRef.current) return; // map 인스턴스 확인
-          
-          const bounds = map.getBounds();
-          const sw = bounds.getSouthWest();
-          const ne = bounds.getNorthEast();
-          const centerPos = map.getCenter(); // 이름 충돌 방지
+      // ✏️ 지도 영역 변경 핸들러 (디바운싱 적용)
+      const onBoundsChanged = () => {
+        // 기존 타이머가 있다면 취소 (연속 호출 방지)
+        if (timerRef.current) clearTimeout(timerRef.current);
 
-          const params = {
-            centerLat: centerPos.getLat(),
-            centerLng: centerPos.getLng(),
-            minLat: sw.getLat(),
-            minLng: sw.getLng(),
-            maxLat: ne.getLat(),
-            maxLng: ne.getLng(),
-          };
+        // 0.5초 뒤에 실행되도록 예약
+        timerRef.current = setTimeout(async () => {
+            try {
+              if (!mapRef.current) return;
+              
+              const bounds = map.getBounds();
+              const sw = bounds.getSouthWest();
+              const ne = bounds.getNorthEast();
+              const centerPos = map.getCenter();
 
-          // API 호출
-          const res = await apiClient.get('/meetings/map', { params });
-          const data = res?.data?.data || [];
+              const params = {
+                centerLat: centerPos.getLat(),
+                centerLng: centerPos.getLng(),
+                minLat: sw.getLat(),
+                minLng: sw.getLng(),
+                maxLat: ne.getLat(),
+                maxLng: ne.getLng(),
+              };
 
-          // 기존 마커 제거
-          markersRef.current.forEach((m) => m.setMap(null));
-          markersRef.current = [];
+              // API 호출
+              const res = await apiClient.get('/meetings/map', { params });
+              // ✏️ 응답 데이터 처리 (배열인지 확인)
+              const data = Array.isArray(res?.data?.data) ? res.data.data : [];
 
-          // 새 마커 추가
-          data.forEach((item) => {
-            const lat = item.latitude ?? item.lat ?? item.y;
-            const lng = item.longitude ?? item.lng ?? item.x;
-            if (lat == null || lng == null) return;
-            
-            const marker = new kakao.maps.Marker({
-              position: new kakao.maps.LatLng(lat, lng),
-              map
-            });
-            markersRef.current.push(marker);
-          });
-        } catch (err) {
-          console.error('meetings map fetch error', err);
-        }
+              // 기존 마커 제거
+              markersRef.current.forEach((m) => m.setMap(null));
+              markersRef.current = [];
+
+              // 새 마커 추가
+              data.forEach((item) => {
+                // ✏️ JSON 응답 키값 매핑 (latitude, longitude)
+                const lat = item.latitude ?? item.lat ?? item.y;
+                const lng = item.longitude ?? item.lng ?? item.x;
+                
+                if (lat == null || lng == null) return;
+                
+                const marker = new kakao.maps.Marker({
+                  position: new kakao.maps.LatLng(lat, lng),
+                  map,
+                  title: item.meetingTitle, // 마우스 올리면 제목 표시
+                  clickable: true // 클릭 가능하도록 설정
+                });
+
+                // ✏️ [핵심] 마커 클릭 시 상세 페이지 이동 이벤트 등록
+                kakao.maps.event.addListener(marker, 'click', function() {
+                    // item.meetingId를 사용하여 이동
+                    navigate(`/meetings/${item.meetingId}`);
+                });
+
+                markersRef.current.push(marker);
+              });
+            } catch (err) {
+              console.error('meetings map fetch error', err);
+            }
+        }, 500); // 0.5초 딜레이
       };
 
-      // 이벤트 등록 (debounce 처리를 해주면 API 호출 횟수를 줄일 수 있어 더 좋습니다)
+      // 이벤트 등록
       boundsListenerRef.current = kakao.maps.event.addListener(map, 'bounds_changed', onBoundsChanged);
       
-      // 초기 데이터 로드
+      // 초기 데이터 로드 (첫 실행은 바로 호출)
       onBoundsChanged();
     });
 
     return () => {
-        // 컴포넌트 언마운트 시 정리
-        // 주의: 만약 부모가 자주 리렌더링 시키는 구조라면 이 cleanup 때문에 지도가 자꾸 사라질 수 있습니다.
-        if (boundsListenerRef.current && mapRef.current) {
+        // cleanup
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (boundsListenerRef.current && mapRef.current && window.kakao) {
             window.kakao.maps.event.removeListener(boundsListenerRef.current);
         }
     };
@@ -128,7 +154,6 @@ export default function SearchPage() {
     });
   };
 
-  // watch query param 'q' to run places search when user returns from input page
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const q = params.get('q');

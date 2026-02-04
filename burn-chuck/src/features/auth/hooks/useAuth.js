@@ -8,6 +8,7 @@ export async function login(email, password) {
 
 export function useAuth() {
   const setToken = useAuthStore((s) => s.setToken);
+  const setRefreshToken = useAuthStore((s) => s.setRefreshToken);
   // const setUser = useAuthStore((s) => s.setUser); // 이건 필요 없음
 
   const doLogin = async (email, password) => {
@@ -15,8 +16,10 @@ export function useAuth() {
     
     if (data && data.success) {
       const token = data.data?.token;
-      // 토큰만 던져주면 Store가 알아서 해석하고 id, user 정보 다 채워넣음
+      const refresh = data.data?.refreshToken;
+      // 토큰과 리프레시 토큰을 저장
       if (token) setToken(token);
+      if (refresh) setRefreshToken(refresh);
     }
     return data;
   };

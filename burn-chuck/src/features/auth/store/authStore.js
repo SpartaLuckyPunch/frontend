@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import axios from 'axios';
 
 // Auth store: token + user info persisted to localStorage
 export const useAuthStore = create(
   persist(
     (set, get) => ({
       token: null,
+      refreshToken: null,
       user: null,
       // Decode JWT and populate user fields when setting token
       setToken: (token) => {
@@ -49,7 +51,38 @@ export const useAuthStore = create(
         set({ token: raw, user });
       },
       setUser: (user) => set({ user }),
-      logout: () => set({ token: null, user: null }),
+      setRefreshToken: (rt) => set({ refreshToken: rt }),
+      setTokens: (token, refreshToken) => {
+        // convenience to set both
+        if (token) {
+          get().setToken(token);
+        }
+        if (refreshToken) set({ refreshToken });
+      },
+      logout: () => set({ token: null, refreshToken: null, user: null }),
+      // reissue: call refresh endpoint with stored refresh token and update tokens
+      reissue: async () => {
+        try {
+          const rt = get().refreshToken;
+          if (!rt) return false;
+          const base = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+          const res = await axios.post(`${base}/auth/reissue`, { refreshToken: rt });
+          const data = res?.data?.data;
+          if (data) {
+            const newToken = data.token;
+            const newRefresh = data.refreshToken;
+            if (newToken) get().setToken(newToken);
+            if (newRefresh) set({ refreshToken: newRefresh });
+            return true;
+          }
+          return false;
+        } catch (err) {
+          console.error('token reissue failed', err);
+          // on failure, clear auth
+          get().logout();
+          return false;
+        }
+      },
     }),
     {
       name: 'auth-storage',

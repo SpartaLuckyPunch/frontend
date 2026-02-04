@@ -8,6 +8,9 @@ import SearchPage from './pages/SearchPage';
 import SearchInputPage from './pages/SearchInputPage';
 import ChatPage from './pages/ChatPage';
 import ChatRoomPage from './pages/ChatRoomPage';
+import MyMeetingPage from './pages/MyMeetingPage';
+import MeetingDetailPage from './pages/MeetingDetailPage';
+import MeetingMapPage from './pages/MeetingMapPage';
 
 export default function App() {
   return (
@@ -18,11 +21,13 @@ export default function App() {
           {/* Layout 적용 (Header, Footer 포함) */}
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/my-meetings" element={<TempPage title="나의 모임" />} />
+            <Route path="/my-meetings" element={<MyMeetingPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/search/input" element={<SearchInputPage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/chat/rooms/:roomId" element={<ChatRoomPage />} />
+            <Route path="/meetings/:id" element={<MeetingDetailPage />} />
+            <Route path="/meetings/:id/map" element={<MeetingMapPage />} />
             <Route path="/profile" element={<TempPage title="프로필" />} />
           </Route>
 
