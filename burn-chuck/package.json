@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.13.4",
     "eslint-config-react-app": "^7.0.1",
+    "event-source-polyfill": "^1.0.31",
     "lucide-react": "^0.562.0",
     "net": "^1.0.2",
     "rc-slider": "^11.1.9",
