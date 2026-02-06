@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { createPortal } from 'react-dom'; // [중요] Portal 추가
+import { createPortal } from 'react-dom';
 import apiClient from '../api/axiosClient';
 import sampleImg from '../assets/images/고윤정.jpg';
 import { useNavigate } from 'react-router-dom';
 import { Edit2, X } from 'lucide-react';
+import SockJS from 'sockjs-client';
+import Stomp from 'stompjs';
+import { useAuthStore } from '../features/auth/store/authStore';
 
 function timeAgoISO(iso) {
   if (!iso) return '';
@@ -22,6 +25,9 @@ export default function ChatPage() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('ALL');
   const navigate = useNavigate();
+
+  const currentUser = useAuthStore((s) => s.user);
+  const stompRef = useRef(null);
 
   const [menu, setMenu] = useState({ visible: false, x: 0, y: 0, roomId: null });
   const [modal, setModal] = useState({ open: false, roomId: null, currentName: '' });
@@ -47,16 +53,82 @@ export default function ChatPage() {
     };
     load();
     
+    // 목록 갱신용 소켓 연결
+    connectListWebsocket();
+
     const handleClickOutside = () => setMenu(prev => ({ ...prev, visible: false }));
     window.addEventListener('click', handleClickOutside);
-    window.addEventListener('scroll', handleClickOutside); // 스크롤 시에도 닫히게 추가
+    window.addEventListener('scroll', handleClickOutside);
     
     return () => { 
       mounted = false; 
       window.removeEventListener('click', handleClickOutside);
       window.removeEventListener('scroll', handleClickOutside);
+      
+      // [수정 포인트] 소켓 연결 해제 시 안전장치 추가
+      if (stompRef.current) {
+        if (stompRef.current.connected) {
+            stompRef.current.disconnect();
+        } else {
+            // 연결 중이거나 이미 닫힌 경우 강제 종료 시도 (옵션)
+            try {
+                if (stompRef.current.ws) stompRef.current.ws.close();
+            } catch (e) { /* ignore */ }
+        }
+        stompRef.current = null;
+      }
     };
   }, []);
+
+  const connectListWebsocket = () => {
+    if (!currentUser?.id) return;
+    if (stompRef.current) return;
+
+    const baseApi = (process.env.REACT_APP_API_URL || 'http://localhost:8080/api').replace(/\/api$/, '');
+    const wsUrl = `${baseApi.replace(/\/api$/, '')}/ws-stomp`;
+    
+    const socket = new SockJS(wsUrl);
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = null; 
+    stompRef.current = stompClient;
+
+    const token = useAuthStore.getState().token;
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    stompClient.connect(headers, function (frame) {
+        // 내 개인 알림 채널 구독 (/sub/user/{myId}/chat)
+        stompClient.subscribe(`/sub/user/${currentUser.id}/chat`, function (message) {
+            if (!message.body) return;
+            try {
+                const event = JSON.parse(message.body);
+                // event: { roomId, lastMessage, lastMessageTime }
+
+                setRooms(prevRooms => {
+                    const targetIndex = prevRooms.findIndex(r => r.roomId === event.roomId);
+                    if (targetIndex === -1) return prevRooms; 
+
+                    const targetRoom = { ...prevRooms[targetIndex] };
+
+                    // 데이터 갱신
+                    targetRoom.unreadCount = (targetRoom.unreadCount || 0) + 1;
+                    targetRoom.lastMessage = event.lastMessage;
+                    targetRoom.lastMessageTime = event.lastMessageTime;
+
+                    // 방을 맨 위로 끌어올리기
+                    const newRooms = [...prevRooms];
+                    newRooms.splice(targetIndex, 1);
+                    newRooms.unshift(targetRoom);
+
+                    return newRooms;
+                });
+            } catch (e) {
+                console.error('List update parse error', e);
+            }
+        });
+    }, function(err) {
+        console.error('Socket connect failed', err);
+    });
+  };
 
   const filtered = rooms
     .filter((r) => (filter === 'ALL' ? true : r.roomType === filter))
@@ -65,7 +137,6 @@ export default function ChatPage() {
   const handleContextMenu = (e, roomId) => {
     e.preventDefault();
     e.stopPropagation();
-    // 마우스 위치를 정확히 잡기 위해 clientX/Y 사용
     setMenu({ visible: true, x: e.clientX, y: e.clientY, roomId });
   };
 
@@ -119,7 +190,6 @@ export default function ChatPage() {
 
   return (
     <div className="p-4 translate-y-[-24px] min-h-screen">
-      {/* 필터 버튼 영역 */}
       <div className="flex gap-2 mb-3">
         <button onClick={() => setFilter('ALL')} className={`px-3 py-1 rounded-full ${filter==='ALL' ? 'bg-green-500 text-white' : 'bg-gray-100'}`}>전체</button>
         <button onClick={() => setFilter('PRIVATE')} className={`px-3 py-1 rounded-full ${filter==='PRIVATE' ? 'bg-black text-white' : 'bg-gray-100'}`}>개인</button>
@@ -149,13 +219,22 @@ export default function ChatPage() {
                 </div>
                 <div className="text-sm text-gray-400">{timeAgoISO(r.lastMessageTime)}</div>
               </div>
-              <div className="text-sm text-gray-600 mt-1">{r.lastMessage ?? '메시지가 없습니다.'}</div>
+              <div className="flex justify-between items-center mt-1">
+                <div className="text-sm text-gray-600 truncate max-w-[200px]">
+                  {r.lastMessage ?? '메시지가 없습니다.'}
+                </div>
+                {/* 안 읽은 메시지 수 배지 (빨간색) */}
+                {r.unreadCount > 0 && (
+                  <div className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {r.unreadCount > 99 ? '99+' : r.unreadCount}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* [수정] Portal을 사용하여 body 바로 아래에 렌더링 (CSS 충돌 방지) */}
       {menu.visible && createPortal(
         <div 
           className="fixed bg-white border shadow-xl rounded-lg z-[9999] overflow-hidden"
@@ -172,7 +251,6 @@ export default function ChatPage() {
         document.body
       )}
 
-      {/* [수정] 모달도 Portal 사용 */}
       {modal.open && createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" onClick={() => setModal({ ...modal, open: false })}>
           <div className="bg-white p-6 rounded-lg w-full max-w-xs shadow-2xl" onClick={e => e.stopPropagation()}>

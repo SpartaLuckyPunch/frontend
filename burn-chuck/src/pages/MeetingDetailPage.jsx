@@ -269,26 +269,43 @@ export default function MeetingDetailPage() {
                     <p className="text-gray-800 font-semibold">{time}</p>
                 </div>
             </div>
-
-            <div className="flex items-start gap-3">
-              <div className="bg-white p-2 rounded-full shadow-sm text-indigo-500">
-                <MapPin size={18} />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-medium">위치</p>
-                <button onClick={() => navigate(`/meetings/${meeting.meetingId}/map`, { state: { latitude: meeting.latitude, longitude: meeting.longitude, location: meeting.location, meetingTitle: meeting.meetingTitle } })} className="text-gray-800 font-semibold hover:underline">
-                  {meeting.location}
-                </button>
-              </div>
+            {/* 위치 영역 (디자인 통일) */}
+            <div 
+                className="flex items-start gap-3 cursor-pointer hover:bg-gray-100 p-2 -m-2 rounded-lg transition-colors"
+                onClick={() => navigate(`/meetings/${meeting.meetingId}/map`, { 
+                    state: { 
+                        latitude: meeting.latitude, 
+                        longitude: meeting.longitude, 
+                        location: meeting.location, 
+                        meetingTitle: meeting.meetingTitle 
+                    } 
+                })}
+            >
+                <div className="bg-white p-2 rounded-full shadow-sm text-indigo-500">
+                    <MapPin size={18} />
+                </div>
+                <div className="w-full">
+                    <p className="text-xs text-gray-500 font-medium">위치</p>
+                    {/* 버튼 대신 p태그로 변경 (상위 div가 클릭 이벤트를 받으므로) */}
+                    <p className="text-gray-800 font-semibold leading-tight mt-0.5">
+                        {meeting.location}
+                    </p>
+                </div>
+                {/* 우측 화살표 아이콘 (이동 가능함 표시) */}
+                <div className="text-gray-400 self-center">
+                    <ChevronLeft size={16} className="rotate-180" />
+                </div>
             </div>
-
-            <div className="flex items-start gap-3">
+            <div 
+                className="flex items-start gap-3 cursor-pointer hover:bg-gray-100 p-2 -m-2 rounded-lg transition-colors"
+                onClick={() => navigate(`/meetings/${id}/members`)}
+            >
                 <div className="bg-white p-2 rounded-full shadow-sm text-indigo-500">
                     <Users size={18} />
                 </div>
                 <div className="w-full">
                     <div className="flex justify-between items-end mb-1">
-                        <p className="text-xs text-gray-500 font-medium">참여 인원</p>
+                        <p className="text-xs text-gray-500 font-medium">참여 인원 (클릭하여 보기)</p> {/* 텍스트 살짝 수정 */}
                         <p className="text-xs font-bold text-indigo-600">
                             {meeting.currentAttendees} / {meeting.maxAttendees}명
                         </p>
@@ -299,6 +316,10 @@ export default function MeetingDetailPage() {
                             style={{ width: `${percent}%` }}
                         ></div>
                     </div>
+                </div>
+                {/* 화살표 아이콘 추가 (이동 가능함을 암시) */}
+                <div className="text-gray-400 self-center">
+                    <ChevronLeft size={16} className="rotate-180" /> 
                 </div>
             </div>
           </div>

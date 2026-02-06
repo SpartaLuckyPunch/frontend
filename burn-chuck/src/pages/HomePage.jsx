@@ -17,9 +17,9 @@ export default function HomePage() {
 			<MyLocation />
 
 			{/* Meetings list */}
-					<div className="mt-3">
-						<MeetingsList category={selectedCategory} onItemClick={(m) => navigate(`/meetings/${m.meetingId}`)} />
-					</div>
+			<div className="mt-3">
+				<MeetingsList category={selectedCategory} onItemClick={(m) => navigate(`/meetings/${m.meetingId}`)} />
+			</div>
 		</div>
 	);
 }

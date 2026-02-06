@@ -55,7 +55,7 @@ export default function MeetingMapPage() {
   }
 
   return (
-    <div className="relative w-full h-screen bg-gray-100">
+    <div className="relative w-full h-screen bg-gray-100 translate-y-[-20px]">
       {/* 뒤로가기 버튼 & 타이틀 */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center bg-gradient-to-b from-black/30 to-transparent pointer-events-none">
         <button 

@@ -21,17 +21,30 @@ export default function ChatRoomPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
-  console.log(currentUser);
   const currentUserId = currentUser?.id;
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  
+  const [roomMembers, setRoomMembers] = useState([]); 
+  const [readStatuses, setReadStatuses] = useState({}); 
 
   const listRef = useRef(null);
   const stompRef = useRef(null);
 
   useEffect(() => {
     if (!roomId) return;
+
+    apiClient.get(`/chat/rooms/${roomId}`)
+      .then(res => {
+        const data = res.data?.data;
+        if(data) {
+          setRoomMembers(data.members || []);
+          setReadStatuses(data.memberReadStatuses || {});
+        }
+      })
+      .catch(err => console.error('Room detail load failed', err));
+
     apiClient
       .get(`/chat/rooms/${roomId}/messages?page=0`)
       .then((res) => {
@@ -39,16 +52,43 @@ export default function ChatRoomPage() {
         const ordered = [...content].reverse();
         setMessages(ordered);
         setTimeout(() => scrollToBottom(), 50);
+        
         connectWebsocket();
       })
       .catch((err) => {
         console.error('messages load', err);
       });
 
+    markAsRead();
+
     return () => {
-      if (stompRef.current) stompRef.current.disconnect();
+      // [수정 포인트] 소켓 연결 해제 시 안전장치 추가
+      if (stompRef.current) {
+         if (stompRef.current.connected) {
+             stompRef.current.disconnect();
+         } else {
+             try {
+                 if (stompRef.current.ws) stompRef.current.ws.close();
+             } catch(e) { /* ignore */ }
+         }
+         stompRef.current = null;
+      }
     };
   }, [roomId]);
+
+  const markAsRead = async () => {
+    try {
+      await apiClient.post(`/chat/rooms/${roomId}/read`);
+      if (currentUserId) {
+          setReadStatuses(prev => ({
+              ...prev,
+              [String(currentUserId)]: Number.MAX_SAFE_INTEGER 
+          }));
+      }
+    } catch (err) {
+      console.error('Mark as read failed', err);
+    }
+  };
 
   function scrollToBottom() {
     if (!listRef.current) return;
@@ -64,62 +104,82 @@ export default function ChatRoomPage() {
     const socket = new SockJS(wsUrl);
     const stompClient = Stomp.over(socket);
     stompRef.current = stompClient;
+    stompClient.debug = null; 
 
     const token = useAuthStore.getState().token;
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     stompClient.connect(headers, function (frame) {
-      try {
-        stompClient.subscribe(`/sub/chat/room/${roomId}`, function (message) {
-          if (!message || !message.body) return;
-          let body;
-          try {
-            body = JSON.parse(message.body);
-          } catch (e) {
-            body = message.body;
-          }
+      
+      stompClient.subscribe(`/sub/chat/room/${roomId}`, function (message) {
+        if (!message || !message.body) return;
+        let body;
+        try { body = JSON.parse(message.body); } catch (e) { body = message.body; }
 
-          // [핵심 변경 1] 내 메시지인지 검사하는 로직 제거
-          // 내가 보낸 것도 서버 돌아서 소켓으로 오면 그때 그립니다.
-          setMessages((prev) => {
-            // 혹시 모를 ID 중복 방지 (안전장치)
-            const exists = prev.some((m) => m.id === body.id);
-            if (exists) return prev;
-            return [...prev, body];
-          });
-          setTimeout(() => scrollToBottom(), 20);
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === body.id);
+          if (exists) return prev;
+          return [...prev, body];
         });
-      } catch (err) {
-        console.error('subscribe error', err);
-      }
+        
+        markAsRead();
+        setTimeout(() => scrollToBottom(), 20);
+      });
+
+      stompClient.subscribe(`/sub/chat/room/${roomId}/read`, function (message) {
+        if (!message || !message.body) return;
+        try {
+           const readEvent = JSON.parse(message.body); 
+           setReadStatuses(prev => ({
+             ...prev,
+             [String(readEvent.userId)]: readEvent.sequence 
+           }));
+        } catch (e) {
+          console.error('Read event parse failed', e);
+        }
+      });
+
     }, function(err){
       console.error('stomp connect error', err);
     });
   }
 
-  // [핵심 변경 2] handleSend 대폭 축소 (API 호출만 담당)
   async function handleSend(e) {
     e?.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    // 1. 입력창 비우기 (UI 반응성 확보)
     setInput('');
-    
-    // 2. 화면에 메시지 추가(setMessages) 하지 않음! (소켓이 해줄 것임)
 
     try {
-      // 3. 서버로 전송
       await apiClient.post(`/chat/rooms/${roomId}/messages`, { content: trimmed });
-      // 성공하면 아무것도 안 해도 됨. 서버가 소켓으로 쏴주니까요.
+      markAsRead();
     } catch (err) {
       console.error('send message failed', err);
-      alert('메시지 전송에 실패했습니다.'); // 에러 처리만 간단히
+      alert('메시지 전송에 실패했습니다.');
     }
   }
 
+  const calculateUnreadCount = (messageSeq) => {
+    if (!roomMembers || roomMembers.length === 0) return 0;
+    if (!messageSeq) return 0;
+
+    let count = 0;
+    roomMembers.forEach(member => {
+      const memberId = member.userId; 
+      if (!memberId) return;
+
+      const userReadSeq = readStatuses[String(memberId)] || 0;
+      if (userReadSeq < messageSeq) {
+        count++;
+      }
+    });
+    return count;
+  };
+
   const rendered = [];
   let lastDate = null;
+  
   messages.forEach((msg) => {
     const msgDate = new Date(msg.createdDatetime).toDateString();
     if (msgDate !== lastDate) {
@@ -131,19 +191,27 @@ export default function ChatRoomPage() {
       lastDate = msgDate;
     }
 
-    // [중요] ID 타입 비교 안전하게 처리 (이전 대화에서 적용한 내용 유지)
     const isMine = Number(msg.senderId) === Number(currentUserId);
-    console.log('Rendering message', currentUserId);
-    
+    const unreadCount = calculateUnreadCount(msg.sequence);
+
     rendered.push(
       <div key={msg.id} className={`flex items-end px-4 mb-3 ${isMine ? 'justify-end' : 'justify-start'}`}>
         {!isMine && (
           <img src={msg.senderProfile || sampleImg} alt="avatar" className="w-8 h-8 rounded-full mr-2" />
         )}
+        
+        {isMine && unreadCount > 0 && (
+          <span className="text-[10px] text-yellow-500 font-bold mr-1 mb-1">{unreadCount}</span>
+        )}
+
         <div className={`${isMine ? 'bg-yellow-300 text-black' : 'bg-white border'} max-w-[72%] p-3 rounded-2xl`}>
           <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
           <div className="text-xs text-gray-500 mt-1 text-right">{formatTime(msg.createdDatetime)}</div>
         </div>
+
+        {!isMine && unreadCount > 0 && (
+          <span className="text-[10px] text-yellow-500 font-bold ml-1 mb-1">{unreadCount}</span>
+        )}
       </div>
     );
   });
@@ -154,7 +222,7 @@ export default function ChatRoomPage() {
         <div className="pt-4">{rendered}</div>
       </main>
 
-      <form onSubmit={handleSend} className="px-3 pb-4 pt-2 border-t bg-white translate-y-[-12px] sticky bottom-0">
+      <form onSubmit={handleSend} className="px-3 pb-4 pt-2 border-t bg-white translate-y-[-10px] sticky bottom-0">
         <div className="relative flex items-center">
           <input
             value={input}

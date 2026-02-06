@@ -11,6 +11,8 @@ import ChatRoomPage from './pages/ChatRoomPage';
 import MyMeetingPage from './pages/MyMeetingPage';
 import MeetingDetailPage from './pages/MeetingDetailPage';
 import MeetingMapPage from './pages/MeetingMapPage';
+import MeetingMembersPage from './pages/MeetingMembersPage';
+import ProfilePage from './pages/UserProfilePage';
 
 export default function App() {
   return (
@@ -28,7 +30,8 @@ export default function App() {
             <Route path="/chat/rooms/:roomId" element={<ChatRoomPage />} />
             <Route path="/meetings/:id" element={<MeetingDetailPage />} />
             <Route path="/meetings/:id/map" element={<MeetingMapPage />} />
-            <Route path="/profile" element={<TempPage title="프로필" />} />
+            <Route path="/meetings/:id/members" element={<MeetingMembersPage />} />
+            <Route path="/profile/:userId" element={<ProfilePage />} />
           </Route>
 
           {/* Layout 미적용 (로그인, 회원가입 등) */}
