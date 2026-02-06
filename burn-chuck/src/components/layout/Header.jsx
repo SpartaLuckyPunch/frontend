@@ -27,7 +27,7 @@ export default function Header() {
       <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[90px] bg-white border-b border-[#ddd] z-[1000] box-border">
         <div className="h-full flex items-center justify-between px-[14px]">
           <Link to="/" className="no-underline">
-            <img src="/logo.png" alt="Burn Chuck" className="h-20" />
+            <img src="/projectLogo.png" alt="Burn Chuck" className="h-16" />
           </Link>
 
           {!token ? (

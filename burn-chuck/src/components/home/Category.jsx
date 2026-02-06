@@ -32,13 +32,13 @@ export default function Category({ selected = null, onSelect = () => {} }) {
 
         {!loading && categories.map((c) => {
           const key = c.code || c.categoryId || c.category;
-          const label = c.category || c.code;
-          const isSelected = c.isAll ? selected === null : selected === c.category;
+          const label = c.category;
+          const isSelected = c.isAll ? selected === null : selected === c.code;
           return (
             <button
               key={key}
-              onClick={() => onSelect(c.isAll ? null : c.category)}
-              className={`flex-shrink-0 mr-3 px-4 py-2 rounded-full whitespace-nowrap ${isSelected ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-800'}`}
+              onClick={() => onSelect(c.isAll ? null : c.code)}
+              className={`flex-shrink-0 mr-3 px-4 py-2 rounded-full whitespace-nowrap ${isSelected ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-800'}`}
               aria-pressed={isSelected}
             >
               {label}
