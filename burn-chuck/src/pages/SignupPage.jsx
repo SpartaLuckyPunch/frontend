@@ -19,6 +19,7 @@ export default function SignupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [gender, setGender] = useState('male');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [signUpToken, setSignUpToken] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -81,6 +82,9 @@ export default function SignupPage() {
       };
 
       const res = await apiClient.post('/auth/signup', body);
+
+      const { token } = res.data.data;
+      setSignUpToken(token);
       // assume success status 200/201
       setShowSuccessModal(true);
     } catch (err) {
@@ -204,12 +208,12 @@ export default function SignupPage() {
           <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/50">
             <div className="w-[320px] bg-white rounded-lg shadow-lg p-6 text-center">
               <h3 className="text-lg font-semibold mb-3">회원가입이 성공했습니다!</h3>
-              <p className="text-sm text-gray-600 mb-6">가입이 완료되었습니다. 확인을 누르면 로그인 페이지로 이동합니다.</p>
+              <p className="text-sm text-gray-600 mb-6">가입이 완료되었습니다.</p>
               <div className="flex justify-center">
                 <button
                   onClick={() => {
                     setShowSuccessModal(false);
-                    navigate('/login');
+                    navigate('/profile-setup', { state: { token: signUpToken } });
                   }}
                   className="bg-green-500 text-white px-6 py-2 rounded-md font-medium"
                 >

@@ -13,6 +13,7 @@ import MeetingDetailPage from './pages/MeetingDetailPage';
 import MeetingMapPage from './pages/MeetingMapPage';
 import MeetingMembersPage from './pages/MeetingMembersPage';
 import ProfilePage from './pages/UserProfilePage';
+import ProfileSetupPage from './pages/ProfileSetupPage';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
           {/* Layout 미적용 (로그인, 회원가입 등) */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/profile-setup" element={<ProfileSetupPage />} />
         </Routes>
       </div>
     </BrowserRouter>
