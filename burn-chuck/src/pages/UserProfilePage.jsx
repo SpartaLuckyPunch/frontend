@@ -29,6 +29,7 @@ export default function UserProfilePage() {
   const [reviews, setReviews] = useState({ reactions: [], reviewList: [] });
   const [isFollowing, setIsFollowing] = useState(false); // 팔로우 여부
   const [loading, setLoading] = useState(true);
+  const [meetingCount, setMeetingCount] = useState(0);
 
   // 데이터 로드
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function UserProfilePage() {
 
         setProfile(profileRes.data.data);
         setMeetings(meetingRes.data.data.content || []);
+        setMeetingCount(meetingRes.data.data.totalElements || 0);
         setReviews({
           reactions: reviewRes.data.data.reactionCountList || [],
           reviewList: reviewRes.data.data.reviewList.content || []
@@ -215,7 +217,7 @@ export default function UserProfilePage() {
       {/* 2. 주최한 모임 (가로 스크롤) */}
       <div className="mt-6 px-4">
         <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-900">주최 모임 <span className="text-indigo-600">{meetings.length}</span></h2>
+            <h2 className="text-lg font-bold text-gray-900">주최 모임 <span className="text-indigo-600">{meetingCount}</span></h2>
             {meetings.length > 0 && <ChevronLeft className="rotate-180 text-gray-400" size={20} />}
         </div>
 
@@ -228,7 +230,7 @@ export default function UserProfilePage() {
                         onClick={() => navigate(`/meetings/${meeting.meetingId}`)}
                     >
                         <div className="relative">
-                            <img src={sampleImg || meeting.imgUrl} alt={meeting.meetingTitle} className="w-full h-28 object-cover" />
+                            <img src={meeting.imgUrl || meeting.imgUrl} alt={meeting.meetingTitle} className="w-full h-28 object-cover" />
                             <div className="absolute top-2 right-2">
                                 <span className={`text-[10px] px-2 py-1 rounded-full font-bold text-white 
                                     ${meeting.status === 'OPEN' ? 'bg-indigo-500' : 'bg-gray-500'}`}>

@@ -123,9 +123,13 @@ export default function MeetingCreatePage() {
 
         setLoading(true);
         try {
-            await apiClient.post('/meetings', formData);
+            const res = await apiClient.post('/meetings', formData);
+            const createdMeetingId = res.data.data.meetingId;
+
             alert("모임이 성공적으로 생성되었습니다!");
-            navigate('/');
+            
+            // [핵심] 생성된 모임 상세 페이지로 이동
+            navigate(`/meetings/${createdMeetingId}`);
         } catch (error) {
             console.error("모임 생성 실패", error);
             const msg = error.response?.data?.message || "모임 생성 중 오류가 발생했습니다.";

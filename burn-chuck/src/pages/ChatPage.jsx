@@ -210,7 +210,7 @@ export default function ChatPage() {
             onTouchEnd={handleTouchEnd}
             onTouchMove={handleTouchMove}
           >
-            <img src={sampleImg} alt="avatar" className="w-12 h-12 rounded-full mr-3 object-cover" />
+            <img src={r.chatRoomImg} alt="avatar" className="w-12 h-12 rounded-full mr-3 object-cover" />
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
