@@ -210,9 +210,9 @@ export default function MeetingDetailPage() {
           </div>
 
           <img
-            src={sampleImg || meeting.imgUrl}
+            src={meeting.imgUrl || sampleImg}
             alt={meeting.meetingTitle}
-            className="w-full h-72 object-contain"
+            className="w-full h-72 object-cover"
           />
           
           <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md flex items-center gap-1 translate-y-[-12px]">

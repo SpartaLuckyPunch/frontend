@@ -79,7 +79,7 @@ export default function MeetingsList({ category = null, onItemClick = () => {} }
                 }
               }}
             >
-              <img src={sampleImg} alt={title} className="w-24 h-full object-cover mr-3 rounded" />
+              <img src={m.imgUrl} alt={title} className="w-24 h-full object-cover mr-3 rounded" />
               <div className="flex-1">
                 <div className="font-medium text-gray-800 mb-4">{title}</div>
                 <div className="text-sm text-gray-500">{location}</div>

@@ -15,6 +15,7 @@ import MeetingMembersPage from './pages/MeetingMembersPage';
 import ProfilePage from './pages/UserProfilePage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
+import MeetingCreatePage from './pages/MeetingCreatePage';
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/meetings/:id/map" element={<MeetingMapPage />} />
             <Route path="/meetings/:id/members" element={<MeetingMembersPage />} />
             <Route path="/profile/:userId" element={<ProfilePage />} />
+            <Route path="/meetings/create" element={<MeetingCreatePage />} />
           </Route>
 
           {/* Layout 미적용 (로그인, 회원가입 등) */}

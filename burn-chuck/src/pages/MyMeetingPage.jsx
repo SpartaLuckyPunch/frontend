@@ -69,7 +69,7 @@ export default function MyMeetingPage() {
       <div className="space-y-4">
         {items.filter((m) => (filter === 'ALL' ? true : m.status === filter)).map((m) => (
             <div key={m.meetingId} className="h-32 bg-white rounded-md flex items-center p-3 shadow-sm cursor-pointer hover:shadow-md" onClick={() => window.location.href = `/meetings/${m.meetingId}`}>
-            <img src={sampleImg || m.imgUrl} alt={m.meetingTitle} className="w-24 h-full object-cover mr-3 rounded" />
+            <img src={m.imgUrl || sampleImg} alt={m.meetingTitle} className="w-24 h-full object-cover mr-3 rounded" />
             <div className="flex-1">
               <div className="font-medium text-gray-800 mb-2">{m.meetingTitle}</div>
               <div className="text-sm text-gray-500">{m.location}</div>

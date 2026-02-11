@@ -9,7 +9,6 @@ export default function Footer() {
   // 1. 스토어에서 유저 정보와 로그인 상태 가져오기
   // (구조 분해 할당으로 깔끔하게 가져옵니다)
   const { user, isLoggedIn } = useAuthStore();
-  console.log('Footer - isLoggedIn:', isLoggedIn, 'user:', user);
   
   // 2. 프로필 경로 생성 로직 수정
   // 로그인이 되어있고(isLoggedIn) 유저 정보(user)가 있을 때만 프로필로 이동
