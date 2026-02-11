@@ -19,7 +19,7 @@ export default function Layout() {
       {/* 헤더 영역 */}
       {loc.pathname && loc.pathname.startsWith('/chat') ? <ChatHeader /> : <Header />}
 
-      <main className="h-screen overflow-y-auto pt-[90px] pb-[90px] box-border scrollbar-hide">
+      <main className="h-screen overflow-y-auto pt-[70px] pb-[70px] box-border scrollbar-hide">
         <div className="max-w-[430px] w-full mx-auto bg-white min-h-full shadow-lg relative">
           <Outlet />
         </div>

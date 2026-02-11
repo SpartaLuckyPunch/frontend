@@ -189,7 +189,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="p-4 translate-y-[-24px] min-h-screen">
+    <div className="p-4 min-h-screen">
       <div className="flex gap-2 mb-3">
         <button onClick={() => setFilter('ALL')} className={`px-3 py-1 rounded-full ${filter==='ALL' ? 'bg-green-500 text-white' : 'bg-gray-100'}`}>전체</button>
         <button onClick={() => setFilter('PRIVATE')} className={`px-3 py-1 rounded-full ${filter==='PRIVATE' ? 'bg-black text-white' : 'bg-gray-100'}`}>개인</button>

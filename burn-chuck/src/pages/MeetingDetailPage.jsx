@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../api/axiosClient';
 import sampleImg from '../assets/images/고윤정.jpg';
-// 아이콘 추가 임포트 (버튼 상태별 아이콘 추가: LogOut, UserPlus, Ban, CheckCircle)
-import { Heart, MapPin, Calendar, Users, Eye, Clock, ChevronLeft, LogOut, UserPlus, Ban, CheckCircle } from 'lucide-react';
+import { Heart, MapPin, Calendar, Users, Eye, Clock, ChevronLeft, LogOut, UserPlus, Ban, CheckCircle, MessageSquarePlus, Star, X, Loader2 } from 'lucide-react';
+
+// 스토어 import
+import useAuthStore from '../features/auth/store/useUserStore'; 
 
 function formatKoreanDatetime(iso) {
   try {
@@ -16,41 +18,230 @@ function formatKoreanDatetime(iso) {
   }
 }
 
+// ----------------------------------------------------------------------
+// [수정된 후기 작성 모달] - API 연동 적용
+// ----------------------------------------------------------------------
+function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [detailedReview, setDetailedReview] = useState('');
+  
+  // [수정] 백엔드에서 받아올 리액션 목록 상태
+  const [reactionOptions, setReactionOptions] = useState([]);
+  const [selectedReactions, setSelectedReactions] = useState([]);
+
+  // [추가] 모달이 열릴 때 리액션 목록(객관식 태그) 조회
+  useEffect(() => {
+    const fetchReactions = async () => {
+        try {
+            // endpoint는 보통 컨트롤러 위치에 따라 '/reactions' 혹은 '/reviews/reactions' 일 수 있습니다.
+            // 여기서는 '/reactions'로 가정하고 작성했습니다.
+            const res = await apiClient.get('/reactions');
+            
+            // 응답 구조: CommonResponse -> List<ReactionResponse>
+            // ReactionResponse: { reactionId: 1, reaction: "친절해요" }
+            const list = res.data.data || [];
+            setReactionOptions(list);
+        } catch (err) {
+            console.error("리액션 목록 로딩 실패", err);
+        }
+    };
+
+    if (isOpen) {
+        fetchReactions();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  // 나(myId)를 제외한 리뷰 대상 목록 생성
+  const reviewTargets = [];
+  
+  if (members.hostId && members.hostId !== myId) {
+    reviewTargets.push({ id: members.hostId, nickname: members.hostNickname, img: members.hostProfileImgUrl, role: 'HOST' });
+  }
+  
+  if (members.attendeeList) {
+    members.attendeeList.forEach(m => {
+        if (m.attendeeId !== myId) {
+            reviewTargets.push({ id: m.attendeeId, nickname: m.attendeeNickname, img: m.attendeeProfileImgUrl, role: 'MEMBER' });
+        }
+    });
+  }
+
+  // [수정] ID 기반 토글 (reactionId 사용)
+  const toggleReaction = (reactionId) => {
+    setSelectedReactions(prev => 
+      prev.includes(reactionId) ? prev.filter(r => r !== reactionId) : [...prev, reactionId]
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedUserId) {
+      alert("후기를 남길 멤버를 선택해주세요.");
+      return;
+    }
+
+    try {
+      const payload = {
+        meetingId: Number(meetingId),
+        rating: rating,
+        reactionList: selectedReactions, // List<Long> (reactionId 목록)
+        detailedReview: detailedReview
+      };
+
+      await apiClient.post(`/users/${selectedUserId}/review`, payload);
+      alert("후기가 등록되었습니다!");
+      onClose(); 
+      
+      // 초기화
+      setRating(5);
+      setDetailedReview('');
+      setSelectedReactions([]);
+      setSelectedUserId(null);
+
+    } catch (error) {
+      console.error("후기 등록 실패", error);
+      alert(error.response?.data?.message || "후기 등록 중 오류가 발생했습니다.");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <X size={24} />
+        </button>
+        
+        <h2 className="text-xl font-bold mb-4 text-center">후기 작성</h2>
+        
+        {/* 1. 대상 선택 */}
+        <div className="mb-6">
+          <p className="text-sm font-semibold text-gray-700 mb-2">누구에게 후기를 남길까요?</p>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {reviewTargets.length === 0 ? (
+               <p className="text-sm text-gray-400 w-full text-center py-2">작성할 대상이 없습니다.</p>
+            ) : (
+                reviewTargets.map(target => (
+                <button
+                    key={target.id}
+                    onClick={() => setSelectedUserId(target.id)}
+                    className={`flex flex-col items-center min-w-[70px] p-2 rounded-xl border transition-all ${
+                    selectedUserId === target.id 
+                        ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' 
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                >
+                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden mb-1">
+                        {target.img ? <img src={target.img} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-gray-300"/>}
+                    </div>
+                    <span className="text-xs truncate w-full text-center font-medium">{target.nickname}</span>
+                    <span className="text-[10px] text-gray-400">{target.role === 'HOST' ? '방장' : '참여자'}</span>
+                </button>
+                ))
+            )}
+          </div>
+        </div>
+
+        {/* 2. 별점 */}
+        <div className="mb-6 text-center">
+            <p className="text-sm font-semibold text-gray-700 mb-2">별점</p>
+            <div className="flex justify-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <button key={star} onClick={() => setRating(star)} className="transition-transform hover:scale-110">
+                        <Star 
+                            size={32} 
+                            className={`${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                        />
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        {/* 3. 태그 선택 (API 데이터 연동) */}
+        <div className="mb-6">
+            <p className="text-sm font-semibold text-gray-700 mb-2">어떤 점이 좋았나요?</p>
+            <div className="flex flex-wrap gap-2">
+                {reactionOptions.length === 0 ? (
+                    <div className="w-full text-center text-gray-400 text-xs py-2">
+                        태그 목록을 불러오는 중...
+                    </div>
+                ) : (
+                    reactionOptions.map((tag) => (
+                        <button
+                            key={tag.reactionId}
+                            onClick={() => toggleReaction(tag.reactionId)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                                selectedReactions.includes(tag.reactionId)
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            {tag.reaction}
+                        </button>
+                    ))
+                )}
+            </div>
+        </div>
+
+        {/* 4. 상세 리뷰 */}
+        <div className="mb-6">
+            <label className="text-sm font-semibold text-gray-700 mb-2 block">상세 후기 (선택)</label>
+            <textarea 
+                value={detailedReview}
+                onChange={(e) => setDetailedReview(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 min-h-[80px]"
+                placeholder="자유롭게 후기를 작성해주세요."
+            />
+        </div>
+
+        <button 
+            onClick={handleSubmit}
+            disabled={!selectedUserId}
+            className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold disabled:bg-gray-300 transition-colors"
+        >
+            등록하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+// ----------------------------------------------------------------------
+// [메인 페이지] MeetingDetailPage
+// ----------------------------------------------------------------------
 export default function MeetingDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   
+  const user = useAuthStore((state) => state.user);
+  const myId = user?.id; 
+
   const [meeting, setMeeting] = useState(null);
-  
-  // 좋아요 상태
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
-
-  // 🚀 참여 상태 (추가됨)
   const [isAttending, setIsAttending] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [meetingMembers, setMeetingMembers] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
 
-    // 🚀 3개의 API 병렬 호출 (상세정보, 좋아요여부, 참여목록)
     Promise.all([
-      apiClient.get(`/meetings/${id}`),             // 1. 모임 상세
-      apiClient.get(`/meetings/${id}/like-existence`), // 2. 좋아요 여부
-      apiClient.get(`/meetings/attendance-meetings`)   // 3. 내 참여 목록 확인
+      apiClient.get(`/meetings/${id}`),
+      apiClient.get(`/meetings/${id}/like-existence`),
+      apiClient.get(`/meetings/attendance-meetings`)
     ])
     .then(([detailRes, likeRes, attendRes]) => {
       if (mounted) {
         const meetingData = detailRes?.data?.data || detailRes?.data;
         const likeStatus = likeRes?.data?.data;
-        
-        // 🚀 참여 목록에서 현재 보고 있는 모임 ID가 있는지 확인
-        // attendRes.data.data.meetingList 구조에 맞춤
         const myMeetingList = attendRes?.data?.data?.meetingList || [];
-        // useParams의 id는 string이므로 Number로 변환하여 비교
         const isUserAttending = myMeetingList.some(m => m.meetingId === Number(id));
 
         setMeeting(meetingData);
@@ -70,7 +261,6 @@ export default function MeetingDetailPage() {
     return () => { mounted = false; };
   }, [id]);
 
-  // 좋아요 핸들러
   const handleToggleLike = async () => {
     if (!meeting) return;
     const prevIsLiked = isLiked;
@@ -94,26 +284,19 @@ export default function MeetingDetailPage() {
     }
   };
 
-  // 🚀 참여 / 취소 핸들러
   const handleAttendance = async () => {
     if (!meeting) return;
 
     try {
       if (isAttending) {
-        // 이미 참여 중 -> 취소 로직
         if (!window.confirm("정말 참여를 취소하시겠습니까?")) return;
-        
         await apiClient.delete(`/meetings/${id}/attendance`);
-        
         setIsAttending(false);
         setMeeting(prev => ({ ...prev, currentAttendees: prev.currentAttendees - 1 }));
         alert("참여가 취소되었습니다.");
       } else {
-        // 미참여 -> 참여 로직
         if (!window.confirm("이 모임에 참여하시겠습니까?")) return;
-        
         await apiClient.post(`/meetings/${id}/attendance`);
-        
         setIsAttending(true);
         setMeeting(prev => ({ ...prev, currentAttendees: prev.currentAttendees + 1 }));
         alert("참여 신청이 완료되었습니다!");
@@ -125,83 +308,101 @@ export default function MeetingDetailPage() {
     }
   };
 
-  // 🚀 버튼 상태 결정 함수 (상태 + 참여여부 조합)
+  const handleOpenReviewModal = async () => {
+    try {
+        const res = await apiClient.get(`/meetings/${id}/attendees`);
+        setMeetingMembers(res.data.data);
+        setIsReviewModalOpen(true);
+    } catch (err) {
+        console.error("참여자 목록 조회 실패", err);
+        alert("참여자 목록을 불러오지 못했습니다.");
+    }
+  };
+
   const getButtonConfig = () => {
     if (!meeting) return { text: '', disabled: true, className: '' };
 
-    // meetingStatus: OPEN, CLOSED, COMPLETED
     const { meetingStatus } = meeting;
 
-    // 1. 모집 완료 (COMPLETED)
+    // 1. [수정] 모집 완료 (COMPLETED) -> 후기 작성 (참여자만)
+    // (이전 대화의 요청사항 반영: CLOSED와 교체됨)
     if (meetingStatus === 'COMPLETED') {
-      return {
-        text: '모집 완료',
-        disabled: true,
-        icon: <CheckCircle size={20} />,
-        className: 'bg-gray-300 text-gray-500 cursor-not-allowed'
-      };
+        if (isAttending) {
+            return {
+                text: '후기 작성',
+                disabled: false,
+                icon: <MessageSquarePlus size={20} />,
+                className: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200',
+                onClick: handleOpenReviewModal
+            };
+        } else {
+            // 참여자가 아니면 그냥 '모집 완료'
+            return {
+                text: '모집 완료',
+                disabled: true,
+                icon: <CheckCircle size={20} />,
+                className: 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            };
+        }
     }
 
-    // 2. 모집 마감 (CLOSED)
+    // 2. [수정] 모집 마감 (CLOSED) -> 단순히 '모집 마감'
     if (meetingStatus === 'CLOSED') {
-      return {
-        text: '모집 마감',
-        disabled: true,
-        icon: <Ban size={20} />,
-        className: 'bg-gray-300 text-gray-500 cursor-not-allowed'
-      };
+        return {
+            text: '모집 마감',
+            disabled: true,
+            icon: <Ban size={20} />,
+            className: 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        };
     }
 
-    // 3. 모집 중 (OPEN) 이면서 "이미 참여한 경우"
+    // 3. 모집 중 + 참여 중 -> 취소
     if (isAttending) {
       return {
         text: '참여 취소',
         disabled: false,
         icon: <LogOut size={20} />,
-        className: 'bg-white border-2 border-rose-500 text-rose-500 hover:bg-rose-50'
+        className: 'bg-white border-2 border-rose-500 text-rose-500 hover:bg-rose-50',
+        onClick: handleAttendance
       };
     }
 
-    // 4. 모집 중 (OPEN) 이면서 "참여 안 한 경우" (기본)
+    // 4. 모집 중 + 미참여 -> 참여
     return {
       text: '참여하기',
       disabled: false,
       icon: <UserPlus size={20} />,
-      className: 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white shadow-lg shadow-indigo-200'
+      className: 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white shadow-lg shadow-indigo-200',
+      onClick: handleAttendance
     };
   };
 
   const btnConfig = getButtonConfig();
 
-  // 로딩 스켈레톤
-  if (loading) return (
-    <div className="max-w-md mx-auto h-screen bg-white animate-pulse">
+  if (loading) return <div className="max-w-md mx-auto h-screen bg-white animate-pulse">
       <div className="h-64 bg-gray-200"></div>
       <div className="p-5 space-y-4">
         <div className="h-8 bg-gray-200 rounded w-3/4"></div>
         <div className="h-4 bg-gray-200 rounded w-1/2"></div>
         <div className="h-32 bg-gray-200 rounded"></div>
       </div>
-    </div>
-  );
-
-  if (error) return (
-    <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
-        <div className="text-red-500 mb-2">오류가 발생했습니다</div>
-        <button onClick={() => window.location.reload()} className="text-sm underline text-gray-500">새로고침</button>
-    </div>
-  );
+  </div>;
   
+  if (error) return <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
+      <div className="text-red-500 mb-2">오류가 발생했습니다</div>
+      <button onClick={() => window.location.reload()} className="text-sm underline text-gray-500">새로고침</button>
+  </div>;
+
   if (!meeting) return <div className="p-4 text-center text-gray-500">모임 정보를 찾을 수 없습니다.</div>;
 
   const { date, time } = formatKoreanDatetime(meeting.meetingDatetime);
   const percent = Math.min((meeting.currentAttendees / meeting.maxAttendees) * 100, 100);
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-24 relative translate-y-[-20px]">
+    <div className="bg-gray-50 min-h-screen relative">
       <div className="max-w-md mx-auto bg-white min-h-screen shadow-xl relative overflow-hidden">
         
-        {/* 1. 상단 네비게이션 & 이미지 */}
+        {/* 상단 이미지 영역 */}
         <div className="relative">
           <div className="absolute top-0 left-0 w-full z-10 flex justify-between p-4 bg-gradient-to-b from-black/50 to-transparent">
             <button onClick={() => navigate(-1)} className="text-white hover:bg-white/20 p-2 rounded-full transition">
@@ -221,7 +422,7 @@ export default function MeetingDetailPage() {
           </div>
         </div>
 
-        {/* 2. 메인 컨텐츠 */}
+        {/* 메인 컨텐츠 */}
         <div className="p-6 -mt-6 bg-white rounded-t-3xl relative z-0">
           
           <div className="flex justify-between items-start mb-6">
@@ -269,7 +470,7 @@ export default function MeetingDetailPage() {
                     <p className="text-gray-800 font-semibold">{time}</p>
                 </div>
             </div>
-            {/* 위치 영역 (디자인 통일) */}
+            
             <div 
                 className="flex items-start gap-3 cursor-pointer hover:bg-gray-100 p-2 -m-2 rounded-lg transition-colors"
                 onClick={() => navigate(`/meetings/${meeting.meetingId}/map`, { 
@@ -286,16 +487,15 @@ export default function MeetingDetailPage() {
                 </div>
                 <div className="w-full">
                     <p className="text-xs text-gray-500 font-medium">위치</p>
-                    {/* 버튼 대신 p태그로 변경 (상위 div가 클릭 이벤트를 받으므로) */}
                     <p className="text-gray-800 font-semibold leading-tight mt-0.5">
                         {meeting.location}
                     </p>
                 </div>
-                {/* 우측 화살표 아이콘 (이동 가능함 표시) */}
                 <div className="text-gray-400 self-center">
                     <ChevronLeft size={16} className="rotate-180" />
                 </div>
             </div>
+
             <div 
                 className="flex items-start gap-3 cursor-pointer hover:bg-gray-100 p-2 -m-2 rounded-lg transition-colors"
                 onClick={() => navigate(`/meetings/${id}/members`)}
@@ -305,7 +505,7 @@ export default function MeetingDetailPage() {
                 </div>
                 <div className="w-full">
                     <div className="flex justify-between items-end mb-1">
-                        <p className="text-xs text-gray-500 font-medium">참여 인원 (클릭하여 보기)</p> {/* 텍스트 살짝 수정 */}
+                        <p className="text-xs text-gray-500 font-medium">참여 인원 (클릭하여 보기)</p>
                         <p className="text-xs font-bold text-indigo-600">
                             {meeting.currentAttendees} / {meeting.maxAttendees}명
                         </p>
@@ -317,7 +517,6 @@ export default function MeetingDetailPage() {
                         ></div>
                     </div>
                 </div>
-                {/* 화살표 아이콘 추가 (이동 가능함을 암시) */}
                 <div className="text-gray-400 self-center">
                     <ChevronLeft size={16} className="rotate-180" /> 
                 </div>
@@ -332,18 +531,29 @@ export default function MeetingDetailPage() {
           </div>
         </div>
 
-        {/* 🚀 5. 하단 고정 버튼 (Sticky Footer) - 상태에 따라 변함 */}
-        <div className="absolute left-0 right-0 max-w-md mx-auto bg-white border-gray-100 p-4 z-50">
+        {/* 하단 고정 버튼 */}
+        <div className="absolute left-0 right-0 max-w-md mx-auto bottom-0 bg-white border-t border-gray-100 p-4 z-50">
             <button 
-                onClick={handleAttendance}
+                onClick={btnConfig.onClick} 
                 disabled={btnConfig.disabled}
                 className={`w-full font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 ${btnConfig.className}`}
             >
-                {/* 버튼 아이콘과 텍스트 */}
                 {btnConfig.icon}
                 <span>{btnConfig.text}</span>
             </button>
         </div>
+
+        {/* 후기 작성 모달 */}
+        {meetingMembers && (
+            <ReviewModal 
+                isOpen={isReviewModalOpen}
+                onClose={() => setIsReviewModalOpen(false)}
+                meetingId={id}
+                members={meetingMembers}
+                myId={myId}
+            />
+        )}
+
       </div>
     </div>
   );
