@@ -14,6 +14,7 @@ import MeetingMapPage from './pages/MeetingMapPage';
 import MeetingMembersPage from './pages/MeetingMembersPage';
 import ProfilePage from './pages/UserProfilePage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/profile-setup" element={<ProfileSetupPage />} />
+          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         </Routes>
       </div>
     </BrowserRouter>

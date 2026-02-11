@@ -1,7 +1,7 @@
 import apiClient from '../../../api/axiosClient';
 import { useAuthStore } from '../store/authStore';
 
-// 1. 로그인 요청 (쿠키 세팅용)
+// 1. 로그인 요청
 export async function login(email, password) {
   const res = await apiClient.post('/auth/login', { email, password });
   return res.data;
@@ -9,8 +9,6 @@ export async function login(email, password) {
 
 // 2. [추가] 내 프로필 조회 요청 (쿠키가 세팅된 상태에서 호출됨)
 export async function fetchMyProfile() {
-  // @GetMapping이 붙은 컨트롤러의 주소에 맞춰주세요. (예: /users 또는 /users/me)
-  // 여기서는 '/users'라고 가정하겠습니다.
   const res = await apiClient.get('/users'); 
   return res.data;
 }
