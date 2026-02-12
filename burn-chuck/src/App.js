@@ -19,6 +19,7 @@ import MeetingCreatePage from './pages/MeetingCreatePage';
 import CategorySetupPage from './pages/CategorySetupPage';
 import MeetingEditPage from './pages/MeetingEditPage';
 import ProfileEditPage from './pages/ProfileEditPage';
+import MeetingSearchPage from './pages/MeetingSearchPage';
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/profile/:userId" element={<ProfilePage />} />
             <Route path="/meetings/create" element={<MeetingCreatePage />} />
             <Route path="/meetings/:id/edit" element={<MeetingEditPage />} />
+            <Route path="/search/meetings" element={<MeetingSearchPage />} />
           </Route>
 
           {/* Layout 미적용 (로그인, 회원가입 등) */}
