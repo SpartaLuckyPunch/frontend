@@ -97,7 +97,7 @@ const handleComplete = async () => {
       });
 
       alert("프로필 이미지가 등록되었습니다!");
-      navigate('/login'); 
+      navigate('/category-setup'); 
 
     } catch (error) {
       console.error("업로드 실패:", error);
@@ -108,7 +108,7 @@ const handleComplete = async () => {
   };
 
   const handleSkip = () => {
-    navigate('/login');
+    navigate('/category-setup');
   };
 
   return (
