@@ -141,7 +141,7 @@ export default function UserProfilePage() {
           </button>
           <div className="font-bold text-lg">프로필</div>
           <button className="p-2 rounded-full hover:bg-gray-100">
-            {isMe ? <SquarePen size={24} className="text-gray-700" /> : <MoreVertical size={24} className="text-gray-700" />}
+            {isMe ? <SquarePen onClick={() => navigate('/profile/edit')} size={24} className="text-gray-700" /> : <MoreVertical size={24} className="text-gray-700" />}
           </button>
         </div>
 

@@ -18,6 +18,7 @@ import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import MeetingCreatePage from './pages/MeetingCreatePage';
 import CategorySetupPage from './pages/CategorySetupPage';
 import MeetingEditPage from './pages/MeetingEditPage';
+import ProfileEditPage from './pages/ProfileEditPage';
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/profile-setup" element={<ProfileSetupPage />} />
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
           <Route path="/category-setup" element={<CategorySetupPage />} />
+          <Route path="/profile/edit" element={<ProfileEditPage />} />
         </Routes>
       </div>
     </BrowserRouter>
