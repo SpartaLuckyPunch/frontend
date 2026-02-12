@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../api/axiosClient';
 import sampleImg from '../assets/images/고윤정.jpg';
-import { Heart, MapPin, Calendar, Users, Eye, Clock, ChevronLeft, LogOut, UserPlus, Ban, CheckCircle, MessageSquarePlus, Star, X, Loader2 } from 'lucide-react';
+import { Heart, MapPin, Calendar, Users, Eye, Clock, ChevronLeft, LogOut, UserPlus, Ban, CheckCircle, MessageSquarePlus, Star, X, Loader2, MoreVertical, Edit, Trash2 } from 'lucide-react';
 
 // 스토어 import
 import useAuthStore from '../features/auth/store/useUserStore'; 
@@ -19,27 +19,20 @@ function formatKoreanDatetime(iso) {
 }
 
 // ----------------------------------------------------------------------
-// [수정된 후기 작성 모달] - API 연동 적용
+// [후기 작성 모달]
 // ----------------------------------------------------------------------
 function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [rating, setRating] = useState(5);
   const [detailedReview, setDetailedReview] = useState('');
   
-  // [수정] 백엔드에서 받아올 리액션 목록 상태
   const [reactionOptions, setReactionOptions] = useState([]);
   const [selectedReactions, setSelectedReactions] = useState([]);
 
-  // [추가] 모달이 열릴 때 리액션 목록(객관식 태그) 조회
   useEffect(() => {
     const fetchReactions = async () => {
         try {
-            // endpoint는 보통 컨트롤러 위치에 따라 '/reactions' 혹은 '/reviews/reactions' 일 수 있습니다.
-            // 여기서는 '/reactions'로 가정하고 작성했습니다.
             const res = await apiClient.get('/reactions');
-            
-            // 응답 구조: CommonResponse -> List<ReactionResponse>
-            // ReactionResponse: { reactionId: 1, reaction: "친절해요" }
             const list = res.data.data || [];
             setReactionOptions(list);
         } catch (err) {
@@ -54,7 +47,6 @@ function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
 
   if (!isOpen) return null;
 
-  // 나(myId)를 제외한 리뷰 대상 목록 생성
   const reviewTargets = [];
   
   if (members.hostId && members.hostId !== myId) {
@@ -69,7 +61,6 @@ function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
     });
   }
 
-  // [수정] ID 기반 토글 (reactionId 사용)
   const toggleReaction = (reactionId) => {
     setSelectedReactions(prev => 
       prev.includes(reactionId) ? prev.filter(r => r !== reactionId) : [...prev, reactionId]
@@ -86,7 +77,7 @@ function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
       const payload = {
         meetingId: Number(meetingId),
         rating: rating,
-        reactionList: selectedReactions, // List<Long> (reactionId 목록)
+        reactionList: selectedReactions,
         detailedReview: detailedReview
       };
 
@@ -94,7 +85,6 @@ function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
       alert("후기가 등록되었습니다!");
       onClose(); 
       
-      // 초기화
       setRating(5);
       setDetailedReview('');
       setSelectedReactions([]);
@@ -115,7 +105,6 @@ function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
         
         <h2 className="text-xl font-bold mb-4 text-center">후기 작성</h2>
         
-        {/* 1. 대상 선택 */}
         <div className="mb-6">
           <p className="text-sm font-semibold text-gray-700 mb-2">누구에게 후기를 남길까요?</p>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -143,7 +132,6 @@ function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
           </div>
         </div>
 
-        {/* 2. 별점 */}
         <div className="mb-6 text-center">
             <p className="text-sm font-semibold text-gray-700 mb-2">별점</p>
             <div className="flex justify-center gap-1">
@@ -158,7 +146,6 @@ function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
             </div>
         </div>
 
-        {/* 3. 태그 선택 (API 데이터 연동) */}
         <div className="mb-6">
             <p className="text-sm font-semibold text-gray-700 mb-2">어떤 점이 좋았나요?</p>
             <div className="flex flex-wrap gap-2">
@@ -184,7 +171,6 @@ function ReviewModal({ isOpen, onClose, meetingId, members, myId }) {
             </div>
         </div>
 
-        {/* 4. 상세 리뷰 */}
         <div className="mb-6">
             <label className="text-sm font-semibold text-gray-700 mb-2 block">상세 후기 (선택)</label>
             <textarea 
@@ -228,6 +214,21 @@ export default function MeetingDetailPage() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [meetingMembers, setMeetingMembers] = useState(null);
 
+  // 더보기 메뉴 상태
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  // 외부 클릭 시 메뉴 닫기
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -251,8 +252,8 @@ export default function MeetingDetailPage() {
       }
     })
     .catch((err) => {
-      console.error('데이터 로딩 실패', err);
-      if (mounted) setError(err);
+        console.error('데이터 로딩 실패', err);
+        if (mounted) setError(err);
     })
     .finally(() => {
       if (mounted) setLoading(false);
@@ -319,13 +320,32 @@ export default function MeetingDetailPage() {
     }
   };
 
+  // 수정 페이지 이동
+  const handleEdit = () => {
+    navigate(`/meetings/${id}/edit`);
+  };
+
+  // 삭제 요청
+  const handleDelete = async () => {
+    if (!window.confirm("정말로 이 모임을 삭제하시겠습니까?")) return;
+
+    try {
+        await apiClient.delete(`/meetings/${id}`);
+        alert("모임이 삭제되었습니다.");
+        navigate('/'); // 홈으로 이동
+    } catch (err) {
+        console.error("삭제 실패", err);
+        // 백엔드에서 권한 체크(403 등)를 하면 여기서 에러 메시지가 뜹니다.
+        alert(err.response?.data?.message || "삭제 중 오류가 발생했습니다.");
+    }
+  };
+
   const getButtonConfig = () => {
     if (!meeting) return { text: '', disabled: true, className: '' };
 
     const { meetingStatus } = meeting;
 
-    // 1. [수정] 모집 완료 (COMPLETED) -> 후기 작성 (참여자만)
-    // (이전 대화의 요청사항 반영: CLOSED와 교체됨)
+    // 1. 모집 완료 (COMPLETED) -> 후기 작성 (참여자만)
     if (meetingStatus === 'COMPLETED') {
         if (isAttending) {
             return {
@@ -336,7 +356,6 @@ export default function MeetingDetailPage() {
                 onClick: handleOpenReviewModal
             };
         } else {
-            // 참여자가 아니면 그냥 '모집 완료'
             return {
                 text: '모집 완료',
                 disabled: true,
@@ -346,25 +365,15 @@ export default function MeetingDetailPage() {
         }
     }
 
-    // 2. [수정] 모집 마감 (CLOSED) -> 단순히 '모집 마감'
+    // 2. 모집 마감 (CLOSED) -> 단순히 '모집 마감'
     if (meetingStatus === 'CLOSED') {
-      if (isAttending) {
-        return {
-          text: '참여 취소',
-          disabled: false,
-          icon: <LogOut size={20} />,
-          className: 'bg-white border-2 border-rose-500 text-rose-500 hover:bg-rose-50',
-          onClick: handleAttendance
-        };
-      } else {
         return {
             text: '모집 마감',
             disabled: true,
             icon: <Ban size={20} />,
             className: 'bg-gray-300 text-gray-500 cursor-not-allowed'
         };
-    };
-  }
+    }
 
     // 3. 모집 중 + 참여 중 -> 취소
     if (isAttending) {
@@ -418,6 +427,36 @@ export default function MeetingDetailPage() {
             <button onClick={() => navigate(-1)} className="text-white hover:bg-white/20 p-2 rounded-full transition">
               <ChevronLeft size={24} />
             </button>
+
+            {/* [수정] 조건 없이 항상 표시되는 더보기 메뉴 */}
+            <div className="relative" ref={menuRef}>
+                <button 
+                    onClick={() => setShowMenu(!showMenu)} 
+                    className="text-white hover:bg-white/20 p-2 rounded-full transition"
+                >
+                    <MoreVertical size={24} />
+                </button>
+
+                {/* 드롭다운 메뉴 */}
+                {showMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right z-20">
+                        <button 
+                            onClick={handleEdit}
+                            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                        >
+                            <Edit size={16} />
+                            수정하기
+                        </button>
+                        <button 
+                            onClick={handleDelete}
+                            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
+                        >
+                            <Trash2 size={16} />
+                            삭제하기
+                        </button>
+                    </div>
+                )}
+            </div>
           </div>
 
           <img

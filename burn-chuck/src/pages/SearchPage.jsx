@@ -227,7 +227,7 @@ export default function SearchPage() {
 
 
   return (
-    <div className="relative translate-y-[-20px]">
+    <div className="relative">
       <div className="absolute left-4 right-4 z-20 flex flex-col gap-2" style={{ top: 12 }}>
         
         <div
