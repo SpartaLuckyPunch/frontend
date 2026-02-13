@@ -5,13 +5,24 @@ import apiClient from '../api/axiosClient';
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  
-  // 입력 폼 상태들
+
+  // 1. 기존 폼 상태
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [birthRaw, setBirthRaw] = useState('');
   
+  // 2. 이메일 인증 관련 상태
+  const [verificationCode, setVerificationCode] = useState(''); 
+  const [isCodeSent, setIsCodeSent] = useState(false);          
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [timer, setTimer] = useState(0);                        
+
+  // [추가] 3. 닉네임 중복 확인 관련 상태
+  const [isNicknameChecked, setIsNicknameChecked] = useState(false);   // 중복 확인 버튼 눌렀는지
+  const [isNicknameAvailable, setIsNicknameAvailable] = useState(false); // 사용 가능한지
+  const [nicknameMsg, setNicknameMsg] = useState('');                  // 안내 메시지 (사용 가능/불가능)
+
   // 주소 관련 상태
   const [province, setProvince] = useState('');
   const [city, setCity] = useState('');
@@ -20,16 +31,13 @@ export default function SignupPage() {
   const [provinceList, setProvinceList] = useState([]);
   const [cityList, setCityList] = useState([]);
   const [districtList, setDistrictList] = useState([]);
-  
+
   // UI 상태
   const [submitting, setSubmitting] = useState(false);
   const [gender, setGender] = useState('male');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // [삭제됨] 쿠키 방식이므로 토큰을 state로 관리할 필요 없음
-  // const [signUpToken, setSignUpToken] = useState(''); 
-
-  // 1. 주소 데이터 로드
+  // --- 주소 로직 (기존 동일) ---
   useEffect(() => {
     let mounted = true;
     loadAddresses().then((map) => {
@@ -37,14 +45,11 @@ export default function SignupPage() {
       setAddressMap(map);
       const provinces = Object.keys(map);
       setProvinceList(provinces);
-      if (provinces.length) {
-        setProvince(provinces[0]);
-      }
+      if (provinces.length) setProvince(provinces[0]);
     });
     return () => { mounted = false; };
   }, []);
 
-  // 2. 시/도 변경 시 시/군/구 목록 갱신
   useEffect(() => {
     if (!province) return setCityList([]);
     const cities = Object.keys(addressMap[province] || {});
@@ -52,7 +57,6 @@ export default function SignupPage() {
     setCity(cities[0] || '');
   }, [province, addressMap]);
 
-  // 3. 시/군/구 변경 시 읍/면/동 목록 갱신
   useEffect(() => {
     if (!province || !city) return setDistrictList([]);
     const districts = addressMap[province]?.[city] || [];
@@ -60,13 +64,115 @@ export default function SignupPage() {
     setDistrict(districts[0] || '');
   }, [province, city, addressMap]);
 
+  // --- 타이머 로직 (기존 동일) ---
+  useEffect(() => {
+    let interval;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  // --- 이메일 인증 핸들러 (기존 동일) ---
+  const handleSendVerification = async () => {
+    if (!email) { alert('이메일을 입력해주세요.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('올바른 이메일 형식이 아닙니다.'); return; }
+
+    try {
+      await apiClient.post('/auth/email-verifications', { email });
+      alert('인증번호가 발송되었습니다. 이메일을 확인해주세요.');
+      setIsCodeSent(true);
+      setIsEmailVerified(false); 
+      setTimer(300); 
+    } catch (err) {
+      console.error(err);
+      alert(err?.response?.data?.message || '인증번호 발송 실패');
+    }
+  };
+
+  const handleConfirmVerification = async () => {
+    if (!verificationCode) { alert('인증번호를 입력해주세요.'); return; }
+    try {
+      const res = await apiClient.post('/auth/email-verifications/confirm', { email, verificationCode });
+      if (res.data.data) {
+        alert('이메일 인증이 완료되었습니다.');
+        setIsEmailVerified(true);
+        setIsCodeSent(false);
+        setTimer(0);
+      } else {
+        alert('인증번호가 올바르지 않습니다.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err?.response?.data?.message || '인증 확인 실패');
+    }
+  };
+
+  // [추가] 닉네임 중복 확인 핸들러
+  const handleCheckNickname = async () => {
+    if (!nickname.trim()) {
+        alert('닉네임을 입력해주세요.');
+        return;
+    }
+    // 닉네임 길이 체크 (DTO의 @Size(max=50) 대응 및 최소 길이 등)
+    if (nickname.length > 50) {
+        alert('닉네임은 50자 이하여야 합니다.');
+        return;
+    }
+
+    try {
+        const res = await apiClient.post('/auth/nickname-availability', { nickname });
+        const isAvailable = res.data.data; // true: 사용 가능, false: 중복
+
+        setIsNicknameChecked(true);
+        setIsNicknameAvailable(isAvailable);
+        
+        if (isAvailable) {
+            setNicknameMsg('사용 가능한 닉네임입니다.');
+        } else {
+            setNicknameMsg('이미 사용 중인 닉네임입니다.');
+        }
+    } catch (err) {
+        console.error(err);
+        alert(err?.response?.data?.message || '닉네임 중복 확인 중 오류가 발생했습니다.');
+        setIsNicknameChecked(true);
+        setIsNicknameAvailable(false);
+    }
+  };
+
+  // [추가] 닉네임 입력 변경 핸들러 (입력값이 바뀌면 다시 중복확인 해야 함)
+  const handleNicknameChange = (e) => {
+    setNickname(e.target.value);
+    setIsNicknameChecked(false);   // 내용이 바뀌었으므로 체크 상태 초기화
+    setIsNicknameAvailable(false); // 사용 가능 여부 초기화
+    setNicknameMsg('');            // 메시지 초기화
+  };
+
   // 회원가입 제출 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     
+    // [수정] 필수 인증 체크 (이메일 & 닉네임)
+    if (!isEmailVerified) {
+        alert('이메일 인증을 완료해주세요.');
+        return;
+    }
+    if (!isNicknameChecked || !isNicknameAvailable) {
+        alert('닉네임 중복 확인을 완료해주세요.');
+        return;
+    }
+
+    setSubmitting(true);
+
     try {
-      // 생년월일 포맷팅 (YYYYMMDD -> YYYY-MM-DD)
       const formatBirth = (raw) => {
         const m = String(raw || '').match(/^(\d{4})(\d{2})(\d{2})$/);
         if (!m) return null;
@@ -91,14 +197,7 @@ export default function SignupPage() {
         gender: gender === 'female' ? '여' : '남',
       };
 
-      // [수정] 회원가입 요청
-      // 백엔드가 성공 응답 시 Set-Cookie 헤더를 보내주면 브라우저가 알아서 저장함
       await apiClient.post('/auth/signup', body);
-
-      // [수정] 토큰 추출 로직 제거
-      // const { token } = res.data.data;
-      // setSignUpToken(token);
-
       setShowSuccessModal(true);
     } catch (err) {
       console.error(err);
@@ -109,7 +208,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="h-full bg-white flex justify-center">
+    <div className="h-full bg-white flex justify-center pb-10">
       <div className="w-full max-w-[430px] p-6 box-border">
 
         {/* 뒤로가기 버튼 */}
@@ -129,20 +228,67 @@ export default function SignupPage() {
 
         {/* 폼 영역 */}
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-          <label>
-            <div className="flex items-center gap-3 border-2 border-black rounded-xl p-3">
-                {/* 이메일 아이콘 */}
-              <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 8V16C21 17.1046 20.1046 18 19 18H5C3.89543 18 3 17.1046 3 16V8" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 13C14.2091 13 16 11.2091 16 9C16 6.79086 14.2091 5 12 5C9.79086 5 8 6.79086 8 9C8 11.2091 9.79086 13 12 13Z" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <input value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1 text-base outline-none border-0" placeholder="이메일" />
+          
+          {/* 1. 이메일 입력 + 인증 */}
+          <div>
+            <div className="flex gap-2">
+                <div className="flex-1 flex items-center gap-3 border-2 border-black rounded-xl p-3">
+                    <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 8V16C21 17.1046 20.1046 18 19 18H5C3.89543 18 3 17.1046 3 16V8" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 13C14.2091 13 16 11.2091 16 9C16 6.79086 14.2091 5 12 5C9.79086 5 8 6.79086 8 9C8 11.2091 9.79086 13 12 13Z" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <input 
+                        value={email} 
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            setIsEmailVerified(false);
+                            setIsCodeSent(false);
+                        }} 
+                        className="flex-1 text-base outline-none border-0" 
+                        placeholder="이메일" 
+                        disabled={isEmailVerified} 
+                    />
+                </div>
+                <button 
+                    type="button" 
+                    onClick={handleSendVerification}
+                    disabled={isEmailVerified || timer > 0} 
+                    className={`whitespace-nowrap px-4 rounded-xl text-sm font-bold ${
+                        isEmailVerified 
+                        ? 'bg-gray-100 text-green-600 border border-green-600' 
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                >
+                    {isEmailVerified ? '인증완료' : (timer > 0 ? '재발송' : '인증하기')}
+                </button>
             </div>
-          </label>
+            
+            {/* 인증번호 입력 필드 */}
+            {isCodeSent && !isEmailVerified && (
+                <div className="mt-2 flex gap-2">
+                    <div className="flex-1 flex items-center gap-3 border-2 border-gray-300 rounded-xl p-3 bg-gray-50">
+                        <input 
+                            value={verificationCode} 
+                            onChange={(e) => setVerificationCode(e.target.value)} 
+                            className="flex-1 text-base outline-none border-0 bg-transparent" 
+                            placeholder="인증번호 6자리" 
+                        />
+                        <span className="text-red-500 text-sm font-medium">{formatTime(timer)}</span>
+                    </div>
+                    <button 
+                        type="button"
+                        onClick={handleConfirmVerification}
+                        className="whitespace-nowrap px-4 bg-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-300"
+                    >
+                        확인
+                    </button>
+                </div>
+            )}
+          </div>
 
+          {/* 2. 비밀번호 입력 */}
           <label>
             <div className="flex items-center gap-3 border-2 border-black rounded-xl p-3">
-                {/* 비밀번호 아이콘 */}
               <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 11V8C3 6.34315 4.34315 5 6 5H18C19.6569 5 21 6.34315 21 8V11" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <rect x="7" y="11" width="10" height="8" rx="2" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -151,20 +297,46 @@ export default function SignupPage() {
             </div>
           </label>
 
-          <label>
-            <div className="flex items-center gap-3 border-2 border-black rounded-xl p-3">
-                {/* 닉네임 아이콘 */}
-              <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 21V19C20 17.8954 19.1046 17 18 17H6C4.89543 17 4 17.8954 4 19V21" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="flex-1 text-base outline-none border-0" placeholder="닉네임" />
+          {/* 3. [수정] 닉네임 입력 + 중복확인 버튼 */}
+          <div>
+            <div className="flex gap-2">
+                <div className="flex-1 flex items-center gap-3 border-2 border-black rounded-xl p-3">
+                    <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 21V19C20 17.8954 19.1046 17 18 17H6C4.89543 17 4 17.8954 4 19V21" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <input 
+                        value={nickname} 
+                        onChange={handleNicknameChange} 
+                        className="flex-1 text-base outline-none border-0" 
+                        placeholder="닉네임" 
+                    />
+                </div>
+                <button 
+                    type="button" 
+                    onClick={handleCheckNickname}
+                    // 이미 사용 가능한 상태면 버튼 비활성화 (수정하면 다시 활성화됨)
+                    disabled={isNicknameAvailable}
+                    className={`whitespace-nowrap px-4 rounded-xl text-sm font-bold ${
+                        isNicknameAvailable 
+                        ? 'bg-gray-100 text-blue-600 border border-blue-600' 
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                >
+                    {isNicknameAvailable ? '확인완료' : '중복확인'}
+                </button>
             </div>
-          </label>
+            {/* 닉네임 상태 메시지 */}
+            {isNicknameChecked && (
+                <div className={`text-xs mt-1 ml-1 ${isNicknameAvailable ? 'text-blue-600' : 'text-red-500'}`}>
+                    {nicknameMsg}
+                </div>
+            )}
+          </div>
 
+          {/* 4. 생년월일 입력 */}
           <label>
             <div className="flex items-center gap-3 border-2 border-black rounded-xl p-3">
-                {/* 생년월일 아이콘 */}
               <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 7V3" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M16 7V3" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -185,6 +357,7 @@ export default function SignupPage() {
             <div className="text-xs text-gray-400 mt-1">8자리 숫자만 입력하세요 (YYYYMMDD)</div>
           </label>
 
+          {/* 5. 주소 선택 */}
           <div className="flex gap-2">
             <select value={province} onChange={(e) => setProvince(e.target.value)} className="flex-1 text-xs border-2 border-black rounded-xl p-3">
               {provinceList.length === 0 && <option>불러오는 중...</option>}
@@ -206,6 +379,7 @@ export default function SignupPage() {
             </select>
           </div>
 
+          {/* 6. 성별 선택 */}
           <div className="border-2 border-black rounded-xl p-3 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2">
@@ -219,7 +393,17 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <button type="submit" disabled={submitting} className="bg-green-500 text-white py-3 rounded-full font-bold text-base mt-4">
+          {/* 7. 가입 버튼 */}
+          <button 
+            type="submit" 
+            // [수정] 이메일 인증 + 닉네임 중복확인 모두 완료되어야 버튼 활성화
+            disabled={submitting || !isEmailVerified || !isNicknameChecked || !isNicknameAvailable} 
+            className={`py-3 rounded-full font-bold text-base mt-4 transition-colors ${
+                (submitting || !isEmailVerified || !isNicknameChecked || !isNicknameAvailable) 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                : 'bg-green-500 text-white hover:bg-green-600'
+            }`}
+          >
             {submitting ? '가입중...' : '회원가입'}
           </button>
         </form>
@@ -234,7 +418,6 @@ export default function SignupPage() {
                 <button
                   onClick={() => {
                     setShowSuccessModal(false);
-                    // [수정] state 전달 없이 바로 이동 (쿠키가 있으므로 다음 페이지 API 호출 시 자동 인증됨)
                     navigate('/profile-setup'); 
                   }}
                   className="bg-green-500 text-white px-6 py-2 rounded-md font-medium"

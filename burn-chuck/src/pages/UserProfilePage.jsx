@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/axiosClient';
 import { useAuthStore } from '../features/auth/store/authStore';
 import { ChevronLeft, Star, MessageCircle, UserPlus, MapPin, Calendar, SquarePen , MoreVertical, UserCheck } from 'lucide-react';
-import sampleImg from '../assets/images/고윤정.jpg'; // 기본 이미지
+import sampleImg from '../assets/images/profileSampleImg.png'; // 기본 이미지
 
 // 날짜 포맷팅 함수
 function formatDate(iso) {

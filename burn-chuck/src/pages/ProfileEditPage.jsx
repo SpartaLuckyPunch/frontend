@@ -5,6 +5,7 @@ import axios from 'axios'; // S3 업로드용
 import { loadAddresses } from '../utils/loadAddresses';
 import { ArrowLeft, Camera, Loader2, Check } from 'lucide-react';
 import useAuthStore from '../features/auth/store/authStore'; // 경로 확인 필요
+import sampleImg from '../assets/images/profileSampleImg.png';
 
 export default function ProfileEditPage() {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ export default function ProfileEditPage() {
         // 기존 이미지가 있으면 세팅, 없으면 빈값
         const currentImg = myProfile.profileImgUrl || '';
         setProfileImgUrl(currentImg);
-        setPreviewUrl(currentImg || "https://via.placeholder.com/150"); 
+        setPreviewUrl(currentImg || sampleImg); 
 
         // 주소 세팅 (DB에 저장된 값)
         setProvince(myProfile.province || '');
