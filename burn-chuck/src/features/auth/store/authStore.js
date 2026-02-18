@@ -15,9 +15,22 @@ export const useAuthStore = create(
         set({ user: userData, isLoggedIn: true });
       },
 
-      logout: () => {
-        // 로그아웃 시 유저 정보와 주소 정보 모두 초기화
+      logout: async (skipApiCall = false) => {
+        
+        // skipApiCall이 false일 때만(평소 로그아웃) 서버에 요청을 보냄
+        if (!skipApiCall) {
+          try {
+            await apiClient.post('/auth/logout');
+          } catch (err) {
+            console.error('Logout API failed:', err);
+          }
+        }
+
+        // [중요] API 요청 여부와 상관없이, 내 화면(State)은 무조건 비워야 함!
         set({ user: null, isLoggedIn: false, userAddress: null });
+        
+        // (필요하다면 로컬스토리지 강제 삭제)
+        // localStorage.removeItem('auth-user-storage');
       },
 
       reissue: async () => {

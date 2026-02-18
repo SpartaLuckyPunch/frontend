@@ -1,23 +1,28 @@
 import React, { useEffect } from 'react';
 import { MapPinned } from 'lucide-react';
-import useUserStore from '../../features/auth/store/useUserStore';
+import useUserStore from '../../features/auth/store/useUserStore'; // 경로 확인 필요
 
 export default function MyLocation({ onUseCurrent = () => {} }) {
   const userAddress = useUserStore(state => state.userAddress);
   const fetchUserAddress = useUserStore((state) => state.fetchUserAddress);
+  
+  // [수정 1] 로그인 정보 가져오기 (store 구조에 따라 state.user 또는 state.isLoggedIn 사용)
+  const isLoggedIn = useUserStore((state) => state.isLoggedIn); 
 
-  // [수정] 조건문(if !userAddress)을 제거하여, 
-  // 페이지 진입 시 무조건 한 번 최신 주소를 받아오도록 설정
   useEffect(() => {
-    fetchUserAddress(); 
-  }, [fetchUserAddress]);
+    // [수정 2] 유저가 로그인 상태일 때만 API 호출!
+    if (isLoggedIn) {
+      fetchUserAddress(); 
+    }
+  }, [fetchUserAddress, isLoggedIn]);
 
-  // 혹시 모를 데이터 로딩 시점 대비 (Safe Guard)
-  if (!userAddress) return null; 
+  // 로그인 안 했거나 주소 없으면 아무것도 안 그림 (또는 기본 위치 표시)
+  if (!isLoggedIn || !userAddress) return <div className="h-[50px]"></div>; // 높이만 잡아둠
 
   return (
     <div className="w-full px-4" style={{ height: 50 }}>
-      <div className="h-full flex items-center border-b border-gray-200">
+      {/* ... 기존 JSX 내용 ... */}
+       <div className="h-full flex items-center border-b border-gray-200">
         <div className="flex items-center gap-2">
           <MapPinned size={24} className="text-gray-700" />
           <span className="text-sm text-gray-700">

@@ -4,6 +4,7 @@ import apiClient from '../api/axiosClient';
 import { useAuthStore } from '../features/auth/store/authStore';
 import { ChevronLeft, Star, MessageCircle, UserPlus, MapPin, Calendar, SquarePen , MoreVertical, UserCheck } from 'lucide-react';
 import sampleImg from '../assets/images/profileSampleImg.png'; // 기본 이미지
+import useNotificationStore from '../features/notification/store/useNotificationStore';
 
 // 날짜 포맷팅 함수
 function formatDate(iso) {
@@ -18,11 +19,14 @@ export default function UserProfilePage() {
   
   // 내 정보 가져오기 (Store에서)
   const myUser = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const myId = myUser?.id; 
+
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // 현재 보고 있는 프로필이 '나'인지 확인
   const isMe = Number(userId) === Number(myId);
-
+  
   // 상태 관리
   const [profile, setProfile] = useState(null);
   const [meetings, setMeetings] = useState([]);
@@ -33,6 +37,8 @@ export default function UserProfilePage() {
 
   // 데이터 로드
   useEffect(() => {
+    if (!myUser || isDeleting) return;
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -42,7 +48,7 @@ export default function UserProfilePage() {
           apiClient.get(`/users/${userId}`),
           apiClient.get(`/meetings/hosted-meetings`, { params: { userId } }),
           apiClient.get(`/reviews/users/${userId}`),
-          !isMe ? apiClient.get(`/users/${userId}/follow-existence`) : Promise.resolve({ data: { data: false } })
+          (!isMe) ? apiClient.get(`/users/${userId}/follow-existence`) : Promise.resolve({ data: { data: false } })
         ]);
 
         setProfile(profileRes.data.data);
@@ -57,15 +63,15 @@ export default function UserProfilePage() {
         setIsFollowing(followRes.data.data);
 
       } catch (err) {
-        console.error("프로필 로딩 실패", err);
-        // 에러 처리 (필요시 추가)
+        if (isDeleting || !myUser) return;
+        console.error("프로필 로딩 실패", err);
       } finally {
-        setLoading(false);
+        if (!isDeleting) setLoading(false);
       }
     };
 
     fetchData();
-  }, [userId, isMe]);
+  }, [userId, isMe, isDeleting]);
 
   // 팔로우 토글 핸들러 (낙관적 업데이트 적용)
   const handleToggleFollow = async () => {
@@ -126,7 +132,34 @@ export default function UserProfilePage() {
     }
   };
 
-  if (loading) return <div className="flex justify-center items-center h-screen bg-gray-50">로딩중...</div>;
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("정말로 탈퇴하시겠습니까?\n탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    useNotificationStore.getState().disconnect();
+
+    try {
+      // 1. 회원 탈퇴 API 호출 (여기서 서버쪽 정리 끝!)
+      await apiClient.delete(`/users`);
+      
+      alert("회원 탈퇴가 완료되었습니다.");
+      
+      // 2. [수정] true를 넘겨서 '/auth/logout' API 호출을 막음
+      // 화면의 로그인 정보만 싹 지우고 메인으로 이동
+      logout(true); 
+      
+      navigate('/', { replace: true });
+    } catch (err) {
+      console.error("탈퇴 실패", err);
+      alert(err.response?.data?.message || "탈퇴 처리에 실패했습니다.");
+    } finally {
+      setIsDeleting(false); 
+    }
+  };
+
+  if (loading || isDeleting) return <div className="flex justify-center items-center h-screen bg-gray-50">로딩중...</div>;
   if (!profile) return <div className="p-4 text-center">사용자 정보를 찾을 수 없습니다.</div>;
 
   return (
@@ -313,6 +346,16 @@ export default function UserProfilePage() {
             )}
         </div>
       </div>
+      {isMe && (
+        <div className="mt-8 mb-6 px-4 flex justify-center">
+          <button 
+            onClick={handleDeleteAccount}
+            className="text-xs text-gray-400 underline decoration-gray-300 hover:text-red-500 hover:decoration-red-500 transition-colors p-2"
+          >
+            회원 탈퇴하기
+          </button>
+        </div>
+      )}
 
     </div>
   );
