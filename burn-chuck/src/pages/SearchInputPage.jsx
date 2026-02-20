@@ -29,7 +29,7 @@ export default function SearchInputPage() {
     e?.preventDefault();
     const q = keyword.trim();
     
-    let url = `/search?q=${encodeURIComponent(q)}`;
+    let url = `/search?keyword=${encodeURIComponent(q)}`;
     
     // 날짜 파라미터 추가
     if (startDate) url += `&startDate=${formatDate(startDate)}`;
