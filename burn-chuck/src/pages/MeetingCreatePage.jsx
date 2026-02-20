@@ -140,7 +140,7 @@ export default function MeetingCreatePage() {
     };
 
     return (
-        <div className="bg-white min-h-screen pb-24 translate-y-[-24px]">
+        <div className="bg-white min-h-screen pb-24">
             <main className="pt-[16px] px-5 flex flex-col gap-6">
                 
                 {/* 1. 이미지 업로드 섹션 */}
@@ -319,7 +319,7 @@ export default function MeetingCreatePage() {
             </main>
 
             {/* 하단 생성 버튼 */}
-            <div className="fixed bottom-0 max-w-[430px] w-full bg-white p-4 border-t z-10">
+            <div className="fixed bottom-16 max-w-[430px] w-full bg-white p-4 border-t z-10">
                 <button
                     onClick={handleSubmit}
                     disabled={loading || imgUploading}

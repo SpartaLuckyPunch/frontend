@@ -129,7 +129,7 @@ export default function SignupPage() {
     }
 
     try {
-        const res = await apiClient.post('/auth/nickname-availability', { nickname });
+        const res = await apiClient.get('/auth/nickname-availability', { params: { nickname } });
         const isAvailable = res.data.data; // true: 사용 가능, false: 중복
 
         setIsNicknameChecked(true);

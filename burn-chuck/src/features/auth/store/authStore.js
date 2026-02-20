@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import apiClient from '../../../api/axiosClient';
 
 export const useAuthStore = create(
@@ -13,6 +13,7 @@ export const useAuthStore = create(
 
       setLoginSuccess: (userData) => {
         set({ user: userData, isLoggedIn: true });
+        console.log(get().isLoggedIn);
       },
 
       logout: async (skipApiCall = false) => {
@@ -81,7 +82,7 @@ export const useAuthStore = create(
     }),
     {
       name: 'auth-user-storage', // 로컬 스토리지 키 이름
-      getStorage: () => localStorage,
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );
