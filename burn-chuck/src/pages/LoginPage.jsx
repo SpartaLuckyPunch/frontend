@@ -98,8 +98,7 @@ export default function LoginPage() {
           >
             카카오로 시작하기
           </button>
-          
-          <button type="button" className="bg-white border-2 border-gray-200 py-3 rounded-xl font-bold text-gray-700">구글로 시작하기</button>
+
         </form>
 
       </div>

@@ -4,10 +4,12 @@ import Header from './Header';
 import ChatHeader from './ChatHeader';
 import Footer from './Footer';
 import { Plus } from 'lucide-react'; // 아이콘 추가
+import { useAuthStore } from '../../features/auth/store/authStore';
 
 export default function Layout() {
   const loc = useLocation();
   const navigate = useNavigate();
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
 
   // 현재 페이지가 홈페이지('/')인지 확인
   const isHomePage = loc.pathname === '/';
@@ -25,7 +27,7 @@ export default function Layout() {
         </div>
       </main>
 
-      {isHomePage && (
+      {isHomePage && isLoggedIn && (
         <div className="fixed bottom-[105px] left-0 right-0 mx-auto max-w-[430px] w-full z-50 px-5 pointer-events-none flex justify-end">
           <button
             onClick={() => navigate('/meetings/create')}
