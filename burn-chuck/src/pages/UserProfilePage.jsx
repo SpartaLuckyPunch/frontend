@@ -46,7 +46,7 @@ export default function UserProfilePage() {
         // 1. 프로필, 2. 주최 모임, 3. 후기, 4. 팔로우 여부(타인일 때만)
         const [profileRes, meetingRes, reviewRes, followRes] = await Promise.all([
           apiClient.get(`/users/${userId}`),
-          apiClient.get(`/meetings/hosted-meetings`, { params: { userId } }),
+          apiClient.get(`/meetings/hosted-meetings/users/${userId}`),
           apiClient.get(`/reviews/users/${userId}`),
           (!isMe) ? apiClient.get(`/users/${userId}/follow-existence`) : Promise.resolve({ data: { data: false } })
         ]);
