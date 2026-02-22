@@ -15,6 +15,8 @@ export default function MyLocation({ onUseCurrent = () => {} }) {
     }
   }, [fetchUserAddress, isLoggedIn]);
 
+  console.log('MyLocation - userAddress:', userAddress);
+  console.log('MyLocation - isLoggedIn:', isLoggedIn);
   if (!isLoggedIn || !userAddress) return <div className="h-[50px]"></div>;
 
   return (
