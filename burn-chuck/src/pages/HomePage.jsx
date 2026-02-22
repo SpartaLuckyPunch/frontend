@@ -53,7 +53,8 @@ export default function HomePage() {
             {/* Meetings list */}
             <div className="mt-3">
                 <MeetingsList 
-                    category={selectedCategory} 
+                    category={selectedCategory}
+                    order={sortOrder}
                     onItemClick={(m) => navigate(`/meetings/${m.meetingId}`)} 
                 />
             </div>
