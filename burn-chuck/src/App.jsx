@@ -20,6 +20,7 @@ import CategorySetupPage from './pages/CategorySetupPage';
 import MeetingEditPage from './pages/MeetingEditPage';
 import ProfileEditPage from './pages/ProfileEditPage';
 import MeetingSearchPage from './pages/MeetingSearchPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
