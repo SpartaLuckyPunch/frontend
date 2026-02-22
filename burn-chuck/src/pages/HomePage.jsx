@@ -7,6 +7,7 @@ import MeetingsList from '../components/home/MeetingsList';
 
 export default function HomePage() {
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [sortOrder, setSortOrder] = useState('LATEST');
     const navigate = useNavigate();
 
     return (
@@ -34,6 +35,20 @@ export default function HomePage() {
 
             {/* MyLocation */}
             <MyLocation />
+
+            {/* 👇 2. 정렬 필터 UI 추가 (카테고리 아래, 리스트 위) */}
+            <div className="px-4 mt-4 flex justify-end">
+                <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="text-sm bg-white border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                >
+                    <option value="LATEST">최신순</option>
+                    <option value="POPULAR">인기순</option>
+                    <option value="UPCOMING">마감임박순</option>
+                    <option value="NEAREST">거리순</option>
+                </select>
+            </div>
 
             {/* Meetings list */}
             <div className="mt-3">
