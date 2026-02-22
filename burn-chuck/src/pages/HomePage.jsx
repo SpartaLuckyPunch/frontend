@@ -33,15 +33,19 @@ export default function HomePage() {
             {/* Category */}
             <Category selected={selectedCategory} onSelect={setSelectedCategory} />
 
-            {/* MyLocation */}
-            <MyLocation />
+            {/* 위치 및 정렬 영역 (한 줄로 배치) */}
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+                
+                {/* 왼쪽: 내 위치 (flex-1로 남은 공간 차지, 글자가 길면 말줄임표 처리되도록 min-w-0 추가) */}
+                <div className="flex-1 min-w-0">
+                    <MyLocation />
+                </div>
 
-            {/* 👇 2. 정렬 필터 UI 추가 (카테고리 아래, 리스트 위) */}
-            <div className="px-4 mt-4 flex justify-end">
+                {/* 오른쪽: 정렬 드롭다운 (영역이 찌그러지지 않도록 flex-shrink-0 추가) */}
                 <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value)}
-                    className="text-sm bg-white border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                    className="text-sm bg-white border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm ml-3 flex-shrink-0"
                 >
                     <option value="LATEST">최신순</option>
                     <option value="POPULAR">인기순</option>
@@ -49,7 +53,7 @@ export default function HomePage() {
                     <option value="NEAREST">거리순</option>
                 </select>
             </div>
-
+            
             {/* Meetings list */}
             <div className="mt-3">
                 <MeetingsList 
