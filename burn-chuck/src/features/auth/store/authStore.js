@@ -55,7 +55,6 @@ export const useAuthStore = create(
 
       // 주소 정보 가져오기 액션
       fetchUserAddress: async () => {
-        console.log('fetchUserAddress - isAddressLoading:', get().isAddressLoading);
         if (get().isAddressLoading) return;
 
         set({ isAddressLoading: true });
