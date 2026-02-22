@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../api/axiosClient';
 import { useAuthStore } from '../features/auth/store/authStore';
-import sampleImg from '../assets/images/고윤정.jpg';
+import sampleImg from '../assets/images/profileSampleImg.png';
 import { Send } from 'lucide-react';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
@@ -153,12 +153,12 @@ export default function ChatRoomPage() {
       stompClient.subscribe(`/sub/chat/room/${roomId}/read`, function (message) {
         if (!message || !message.body) return;
         try {
-           const readEvent = JSON.parse(message.body); 
-           // { userId: 15, sequence: 100, ... }
-           setReadStatuses(prev => ({
-             ...prev,
-             [String(readEvent.userId)]: readEvent.sequence 
-           }));
+            const readEvent = JSON.parse(message.body); 
+            // { userId: 15, sequence: 100, ... }
+            setReadStatuses(prev => ({
+              ...prev,
+              [String(readEvent.userId)]: readEvent.sequence 
+            }));
         } catch (e) {
           console.error('Read event parse failed', e);
         }

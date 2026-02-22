@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../api/axiosClient';
 import { ChevronLeft, Crown, User as UserIcon, ChevronRight } from 'lucide-react'; // ChevronRight 추가
-import sampleImg from '../assets/images/고윤정.jpg'; 
+import sampleImg from '../assets/images/profileSampleImg.png'; 
 
 export default function MeetingMembersPage() {
   const { id } = useParams();
