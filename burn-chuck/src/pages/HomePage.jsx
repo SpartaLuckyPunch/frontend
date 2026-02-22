@@ -34,7 +34,7 @@ export default function HomePage() {
             <Category selected={selectedCategory} onSelect={setSelectedCategory} />
 
             {/* 위치 및 정렬 영역 (한 줄로 배치) */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
                 
                 {/* 왼쪽: 내 위치 (flex-1로 남은 공간 차지, 글자가 길면 말줄임표 처리되도록 min-w-0 추가) */}
                 <div className="flex-1 min-w-0">
@@ -53,7 +53,7 @@ export default function HomePage() {
                     <option value="NEAREST">거리순</option>
                 </select>
             </div>
-            
+
             {/* Meetings list */}
             <div className="mt-3">
                 <MeetingsList 

@@ -19,7 +19,7 @@ export default function MyLocation({ onUseCurrent = () => {} }) {
 
   return (
     <div className="w-full px-4" style={{ height: 50 }}>
-      <div className="h-full flex items-center border-b border-gray-200">
+      <div className="h-full flex items-center">
         <div className="flex items-center gap-2">
           <MapPinned size={24} className="text-gray-700" />
           <span className="text-sm text-gray-700">
