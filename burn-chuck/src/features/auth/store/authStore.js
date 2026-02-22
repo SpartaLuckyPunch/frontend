@@ -27,7 +27,7 @@ export const useAuthStore = create(
         }
 
         // [중요] API 요청 여부와 상관없이, 내 화면(State)은 무조건 비워야 함!
-        set({ user: null, isLoggedIn: false, userAddress: null });
+        set({ user: null, isLoggedIn: false, userAddress: null, isAddressLoading: false });
         
         // (필요하다면 로컬스토리지 강제 삭제)
         // localStorage.removeItem('auth-user-storage');
@@ -83,6 +83,12 @@ export const useAuthStore = create(
     {
       name: 'auth-user-storage', // 로컬 스토리지 키 이름
       storage: createJSONStorage(() => localStorage),
+
+      partialize: (state) => ({
+        user: state.user,
+        isLoggedIn: state.isLoggedIn,
+        userAddress: state.userAddress,
+      }),
     }
   )
 );
