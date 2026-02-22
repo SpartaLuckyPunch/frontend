@@ -367,12 +367,22 @@ export default function MeetingDetailPage() {
 
     // 2. 모집 마감 (CLOSED) -> 단순히 '모집 마감'
     if (meetingStatus === 'CLOSED') {
+      if (isAttending) {
         return {
+          text: '참여 취소',
+          disabled: false,
+          icon: <LogOut size={20} />,
+          className: 'bg-white border-2 border-rose-500 text-rose-500 hover:bg-rose-50',
+          onClick: handleAttendance
+        };
+       } else {
+          return {
             text: '모집 마감',
             disabled: true,
             icon: <Ban size={20} />,
             className: 'bg-gray-300 text-gray-500 cursor-not-allowed'
-        };
+          };
+        }
     }
 
     // 3. 모집 중 + 참여 중 -> 취소
