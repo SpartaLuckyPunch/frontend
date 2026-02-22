@@ -152,7 +152,6 @@ export default function ProfileEditPage() {
 
         // 4. 최종 저장할 URL 상태 업데이트
         setProfileImgUrl(cloudFrontUrl); 
-        console.log("S3 업로드 완료:", cloudFrontUrl);
 
     } catch (err) {
         console.error("이미지 업로드 실패", err);

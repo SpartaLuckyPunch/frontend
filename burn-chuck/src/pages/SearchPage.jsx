@@ -27,7 +27,6 @@ export default function SearchPage() {
 
   const myLat = userAddress?.latitude || 37.4979;
   const myLng = userAddress?.longitude || 127.0276;
-  console.log('User Address:', userAddress);
 
   // [1] 데이터 Fetch 함수
   const fetchMeetings = async () => {

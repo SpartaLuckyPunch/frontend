@@ -85,7 +85,6 @@ const handleComplete = async () => {
             'Content-Type': finalBlob.type, 
         },
       },
-      console.log(finalBlob)
     );
 
       // 3. 백엔드에 업로드 완료 알림 (PATCH) -> 여기가 수정되었습니다!

@@ -84,7 +84,7 @@ export default function ChatPage() {
     if (!currentUser?.id) return;
     if (stompRef.current) return;
 
-    const baseApi = (process.env.REACT_APP_API_URL || 'http://localhost:8080/api').replace(/\/api$/, '');
+    const baseApi = (process.env.REACT_APP_API_URL).replace(/\/api$/, '');
     const wsUrl = `${baseApi.replace(/\/api$/, '')}/ws-stomp`;
     
     const socket = new SockJS(wsUrl);

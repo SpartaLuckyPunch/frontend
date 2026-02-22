@@ -13,7 +13,7 @@ const useNotificationStore = create((set, get) => ({
     // 이미 연결되어 있으면 중복 연결 방지
     if (eventSource) return;
 
-    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+    const baseURL = process.env.REACT_APP_API_URL;
     console.log("📡 SSE 연결 시도...");
 
     const newEventSource = new EventSourcePolyfill(`${baseURL}/notifications/subscribe`, {

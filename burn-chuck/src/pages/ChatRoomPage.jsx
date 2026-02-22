@@ -112,7 +112,7 @@ export default function ChatRoomPage() {
   function connectWebsocket() {
     if (stompRef.current) return;
 
-    const baseApi = (process.env.REACT_APP_API_URL || 'http://localhost:8080/api').replace(/\/api$/, '');
+    const baseApi = (process.env.REACT_APP_API_URL).replace(/\/api$/, '');
     const wsUrl = `${baseApi.replace(/\/api$/, '')}/ws-stomp`;
 
     // [수정] SockJS 생성 시 withCredentials 옵션은 지원하지 않는 경우가 많음.

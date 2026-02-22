@@ -13,7 +13,6 @@ export const useAuthStore = create(
 
       setLoginSuccess: (userData) => {
         set({ user: userData, isLoggedIn: true });
-        console.log(get().isLoggedIn);
       },
 
       logout: async (skipApiCall = false) => {

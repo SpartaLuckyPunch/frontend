@@ -100,7 +100,6 @@ export default function MeetingCreatePage() {
             // 4. 업로드 성공 시 실제 DB 저장용 URL 업데이트
             // 여기서 cloudFrontUrl을 사용해야 합니다.
             setFormData(prev => ({ ...prev, imgUrl: cloudFrontUrl }));
-            console.log("이미지 업로드 완료:", cloudFrontUrl);
             
         } catch (error) {
             console.error("이미지 업로드 실패:", error);
@@ -116,7 +115,6 @@ export default function MeetingCreatePage() {
         e.preventDefault();
         
         if (!formData.title || !formData.description || !formData.imgUrl || !formData.meetingDateTime || !formData.location || !formData.categoryCode) {
-            console.log(formData);
             alert("모든 필수 항목을 입력해주세요.");
             return;
         }
