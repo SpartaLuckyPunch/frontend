@@ -155,13 +155,20 @@ export default function SearchPage() {
     if (mapRef.current) return;
 
     const waitForKakao = (cb) => {
-        if (window.kakao && window.kakao.maps) return cb();
-        const id = setInterval(() => {
-            if (window.kakao && window.kakao.maps) {
-                clearInterval(id);
+        if (window.kakao) {
+            window.kakao.maps.load(() => {
                 cb();
-            }
-        }, 100);
+            });
+        } else {
+            const id = setInterval(() => {
+                if (window.kakao) {
+                    clearInterval(id);
+                    window.kakao.maps.load(() => {
+                        cb();
+                    });
+                }
+            }, 100);
+        }
     };
 
     waitForKakao(() => {

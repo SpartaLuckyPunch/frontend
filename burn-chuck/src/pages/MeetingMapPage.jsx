@@ -16,7 +16,7 @@ export default function MeetingMapPage() {
 
     const initMap = () => {
       const container = containerRef.current;
-      if (!container || !window.kakao || !window.kakao.maps) return;
+      if (!container) return;
 
       const kakao = window.kakao;
       const coords = new kakao.maps.LatLng(latitude, longitude);
